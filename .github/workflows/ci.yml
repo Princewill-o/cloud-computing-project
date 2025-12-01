@@ -1,0 +1,47 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, production ]
+  pull_request:
+    branches: [ main, production ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+        
+    - name: Install dependencies
+      working-directory: ./frontend
+      run: npm ci
+      
+    - name: Run linter
+      working-directory: ./frontend
+      run: npm run lint || echo "Linting issues found - please fix before merging"
+      continue-on-error: true
+      
+    - name: Type check
+      working-directory: ./frontend
+      run: npm run type-check || npx tsc --noEmit
+      continue-on-error: true
+      
+    - name: Build check
+      working-directory: ./frontend
+      run: npm run build
+      
+    - name: Check for build errors
+      if: failure()
+      run: |
+        echo "❌ Build failed! Please fix errors before merging."
+        exit 1
+

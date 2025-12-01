@@ -1,0 +1,12 @@
+{
+  "name": "cloud-computing-project",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "prepare": "cd frontend && npm install && cd .. && husky install"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}
+

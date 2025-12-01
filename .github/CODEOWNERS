@@ -1,0 +1,12 @@
+# Code owners for branch protection
+# These users must approve PRs to protected branches
+
+# Frontend code
+/frontend/ @Princewill-o
+
+# GitHub workflows
+/.github/ @Princewill-o
+
+# Root files
+/* @Princewill-o
+

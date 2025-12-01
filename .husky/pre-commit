@@ -1,0 +1,23 @@
+echo "🔍 Running pre-commit checks..."
+
+cd frontend || exit 1
+
+# Run linting (warn only, don't block)
+echo "📝 Checking code style..."
+npm run lint || echo "⚠️  Linting issues found - please review"
+
+# Run type checking
+echo "🔎 Type checking..."
+npm run type-check || {
+  echo "❌ Type checking failed! Please fix type errors before committing."
+  exit 1
+}
+
+# Try to build
+echo "🏗️  Building project..."
+npm run build || {
+  echo "❌ Build failed! Please fix build errors before committing."
+  exit 1
+}
+
+echo "✅ All checks passed! Proceeding with commit..."

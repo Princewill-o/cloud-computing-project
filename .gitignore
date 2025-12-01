@@ -38,6 +38,10 @@ frontend/*.log
 frontend/coverage/
 frontend/.cache/
 
+# Root node_modules
+node_modules/
+package-lock.json
+
 # IDE
 .idea/
 .vscode/
