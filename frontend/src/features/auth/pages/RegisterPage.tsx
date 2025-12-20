@@ -5,6 +5,14 @@ import { Input } from "../../../shared/components/ui/Input";
 import { useAuth } from "../hooks/useAuth";
 import { authService } from "../services/authService";
 
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
+
 export function RegisterPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -50,9 +58,10 @@ export function RegisterPage() {
         accessToken: response.access_token,
       });
       navigate("/questionnaire", { replace: true });
-    } catch (err: any) {
-      console.error(err);
-      setError(err.response?.data?.message || "Failed to create account. Please try again.");
+    } catch (err) {
+      const apiError = err as ApiError;
+      console.error(apiError);
+      setError(apiError.response?.data?.message || "Failed to create account. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { useLocation, useNavigate, NavLink } from "react-router-dom";
+import { useLocation, useNavigate, NavLink, Location } from "react-router-dom";
 import { Button } from "../../../shared/components/ui/Button";
 import { Input } from "../../../shared/components/ui/Input";
 import { useAuth } from "../hooks/useAuth";
@@ -8,6 +8,14 @@ import { authService } from "../services/authService";
 type LocationState = {
   from?: Location;
 };
+
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -36,9 +44,10 @@ export function LoginPage() {
         accessToken: response.access_token,
       });
       navigate(state?.from?.pathname ?? "/", { replace: true });
-    } catch (err: any) {
-      console.error(err);
-      setError(err.response?.data?.message || "Failed to sign in. Please try again.");
+    } catch (err) {
+      const apiError = err as ApiError;
+      console.error(apiError);
+      setError(apiError.response?.data?.message || "Failed to sign in. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

@@ -19,7 +19,7 @@ httpClient.interceptors.request.use(
         if (authData.accessToken) {
           config.headers.Authorization = `Bearer ${authData.accessToken}`;
         }
-      } catch (error) {
+      } catch {
         // Invalid token format, ignore
       }
     }
@@ -44,4 +44,8 @@ httpClient.interceptors.response.use(
 );
 
 export default httpClient;
+
+
+
+
 

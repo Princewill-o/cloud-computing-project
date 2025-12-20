@@ -19,9 +19,21 @@ export interface MarketTrend {
   average_salary: number;
 }
 
+export interface PopularRole {
+  role: string;
+  count: number;
+  average_salary?: number;
+}
+
+export interface Company {
+  name: string;
+  job_count: number;
+  average_salary?: number;
+}
+
 export interface MarketTrendsResponse {
   trending_skills: MarketTrend[];
-  popular_roles: any[];
+  popular_roles: PopularRole[];
   regional_demand: Record<string, number>;
 }
 
@@ -29,7 +41,7 @@ export interface JobMarketResponse {
   total_jobs: number;
   entry_level_jobs: number;
   average_salary: number;
-  top_companies: any[];
+  top_companies: Company[];
   skill_demand: Record<string, number>;
 }
 
@@ -55,4 +67,8 @@ export const analyticsService = {
     return response.data;
   },
 };
+
+
+
+
 

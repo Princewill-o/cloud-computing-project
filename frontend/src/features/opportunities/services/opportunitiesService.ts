@@ -21,11 +21,20 @@ export interface OpportunitiesResponse {
   offset?: number;
 }
 
+export interface RecommendedCourse {
+  course_id?: string;
+  title: string;
+  provider?: string;
+  url?: string;
+  duration?: string;
+  difficulty?: string;
+}
+
 export interface SkillGap {
   skill: string;
   importance: number;
   frequency_in_jobs: number;
-  recommended_courses?: any[];
+  recommended_courses?: RecommendedCourse[];
   estimated_learning_time: string;
 }
 
@@ -67,24 +76,28 @@ export const recommendationsService = {
     return response.data;
   },
 
-  async getCourses(skillGap?: string): Promise<any> {
+  async getCourses(skillGap?: string): Promise<{ courses: RecommendedCourse[] }> {
     const queryParams = skillGap ? `?skill_gap=${skillGap}` : "";
-    const response = await httpClient.get(`/recommendations/courses${queryParams}`);
+    const response = await httpClient.get<{ courses: RecommendedCourse[] }>(`/recommendations/courses${queryParams}`);
     return response.data;
   },
 
-  async getEvents(location?: { latitude: number; longitude: number; radius_km?: number }): Promise<any> {
+  async getEvents(location?: { latitude: number; longitude: number; radius_km?: number }): Promise<{ events: Opportunity[] }> {
     const queryParams = new URLSearchParams();
     if (location) {
       queryParams.append("latitude", location.latitude.toString());
       queryParams.append("longitude", location.longitude.toString());
       if (location.radius_km) queryParams.append("radius_km", location.radius_km.toString());
     }
-    const response = await httpClient.get(`/recommendations/events?${queryParams.toString()}`);
+    const response = await httpClient.get<{ events: Opportunity[] }>(`/recommendations/events?${queryParams.toString()}`);
     return response.data;
   },
 };
 
 // Export as opportunitiesService for consistency
 export const opportunitiesService = recommendationsService;
+
+
+
+
 

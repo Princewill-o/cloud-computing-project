@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "../../../shared/components/ui/Button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../shared/components/ui/Card";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../shared/components/ui/Card";
 import { Input } from "../../../shared/components/ui/Input";
 import { opportunitiesService, type Opportunity } from "../services/opportunitiesService";
 import { cn } from "../../../shared/utils/cn";

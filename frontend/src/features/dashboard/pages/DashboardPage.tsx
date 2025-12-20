@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../../shared/components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../shared/components/ui/Card";
-import { dashboardService } from "../services/dashboardService";
 import { recommendationsService } from "../../opportunities/services/opportunitiesService";
 import { analyticsService } from "../../analytics/services/analyticsService";
 

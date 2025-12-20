@@ -29,6 +29,13 @@ export interface Questionnaire {
   completed_at?: string;
 }
 
+export interface Education {
+  institution?: string;
+  degree?: string;
+  field?: string;
+  graduation_year?: number;
+}
+
 export interface CVInfo {
   cv_id: string;
   file_url: string;
@@ -37,7 +44,7 @@ export interface CVInfo {
   extracted_data?: {
     skills: string[];
     experience_years?: number;
-    education?: any[];
+    education?: Education[];
   };
 }
 
@@ -94,4 +101,8 @@ export const profileService = {
     await httpClient.delete("/users/me/cv");
   },
 };
+
+
+
+
 

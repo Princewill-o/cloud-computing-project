@@ -7,14 +7,13 @@ import {
   SidebarBody, 
   SidebarLink 
 } from "../shared/components/ui/sidebar";
-import { SidebarLogo, SidebarLogoIcon } from "../shared/components/ui/SidebarLogo";
+import { SidebarLogo } from "../shared/components/ui/SidebarLogo";
 import { 
   LayoutDashboard, 
   User, 
   Briefcase, 
   BarChart3, 
-  FileText,
-  LogOut 
+  FileText
 } from "lucide-react";
 import { useState } from "react";
 
