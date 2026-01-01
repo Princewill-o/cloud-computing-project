@@ -223,3 +223,9 @@ The frontend follows a **monolith-to-microservices** architecture pattern:
 
 Part of the Cloud Computing Project (Group G3)
 
+
+
+
+
+
+

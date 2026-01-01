@@ -4,6 +4,10 @@ import { Button } from "../../../shared/components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../shared/components/ui/Card";
 import { recommendationsService } from "../../opportunities/services/opportunitiesService";
 import { analyticsService } from "../../analytics/services/analyticsService";
+import { MotivationalQuote } from "../../../components/ui/MotivationalQuote";
+import { IndustryNews } from "../../../components/ui/IndustryNews";
+import { MarketInsights } from "../../../components/ui/MarketInsights";
+import { CareerAdvice, ProgrammingJoke, FunFact } from "../../../components/ui/ExtraFeatures";
 
 export function DashboardPage() {
   const navigate = useNavigate();
@@ -175,6 +179,25 @@ export function DashboardPage() {
             )}
           </CardContent>
         </Card>
+      </section>
+
+      {/* New Enhanced Features Section */}
+      <section className="space-y-6">
+        {/* Motivational Quote */}
+        <MotivationalQuote />
+
+        {/* Additional Features Grid */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <CareerAdvice />
+          <ProgrammingJoke />
+          <FunFact />
+        </div>
+
+        {/* News and Market Insights Grid */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <IndustryNews />
+          <MarketInsights />
+        </div>
       </section>
     </div>
   );

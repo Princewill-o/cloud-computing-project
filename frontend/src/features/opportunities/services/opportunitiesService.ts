@@ -12,6 +12,11 @@ export interface Opportunity {
   posted_at?: string;
   application_url?: string;
   description?: string;
+  salary_min?: number;
+  salary_max?: number;
+  remote_friendly?: boolean;
+  experience_level?: string;
+  company_size?: string;
 }
 
 export interface OpportunitiesResponse {
@@ -19,6 +24,13 @@ export interface OpportunitiesResponse {
   total: number;
   limit?: number;
   offset?: number;
+  external_api_used?: boolean;
+  recommendation_metadata?: {
+    generated_at: string;
+    model_version: string;
+    user_profile_completeness: number;
+    data_sources?: string[];
+  };
 }
 
 export interface RecommendedCourse {
@@ -47,8 +59,10 @@ export interface GetOpportunitiesParams {
   type?: "job" | "internship" | "hackathon" | "workshop" | "all";
   location?: string;
   skills?: string[];
+  query?: string;
   limit?: number;
   offset?: number;
+  include_external?: boolean;
 }
 
 export const recommendationsService = {
@@ -57,22 +71,24 @@ export const recommendationsService = {
     if (params.type) queryParams.append("type", params.type);
     if (params.location) queryParams.append("location", params.location);
     if (params.skills) queryParams.append("skills", params.skills.join(","));
+    if (params.query) queryParams.append("query", params.query);
     if (params.limit) queryParams.append("limit", params.limit.toString());
     if (params.offset) queryParams.append("offset", params.offset.toString());
+    if (params.include_external !== undefined) queryParams.append("include_external", params.include_external.toString());
 
     const response = await httpClient.get<OpportunitiesResponse>(
-      `/recommendations/opportunities?${queryParams.toString()}`
+      `/api/v1/recommendations/opportunities?${queryParams.toString()}`
     );
     return response.data;
   },
 
   async getOpportunityById(opportunityId: string): Promise<Opportunity> {
-    const response = await httpClient.get<Opportunity>(`/opportunities/${opportunityId}`);
+    const response = await httpClient.get<Opportunity>(`/api/v1/opportunities/${opportunityId}`);
     return response.data;
   },
 
   async getSkillGaps(): Promise<SkillGapsResponse> {
-    const response = await httpClient.get<SkillGapsResponse>("/recommendations/skill-gaps");
+    const response = await httpClient.get<SkillGapsResponse>("/api/v1/recommendations/skill-gaps");
     return response.data;
   },
 

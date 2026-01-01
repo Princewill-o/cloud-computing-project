@@ -8,7 +8,6 @@ import { ProfileOverviewPage } from "../features/profile/pages/ProfileOverviewPa
 import { QuestionnairePage } from "../features/profile/pages/QuestionnairePage";
 import { OpportunitiesListPage } from "../features/opportunities/pages/OpportunitiesListPage";
 import { AnalyticsDashboardPage } from "../features/analytics/pages/AnalyticsDashboardPage";
-import { ProtectedRoute } from "./ProtectedRoute";
 
 export function AppRoutes() {
   return (
@@ -19,44 +18,14 @@ export function AppRoutes() {
         <Route path="/register" element={<RegisterPage />} />
       </Route>
 
-      {/* Main app - profile is public, others are protected */}
+      {/* Main app - ALL PAGES NOW PUBLIC FOR TESTING */}
       <Route path="/" element={<MainLayout />}>
-        <Route index element={<ProfileOverviewPage />} />
+        <Route index element={<DashboardPage />} />
+        <Route path="dashboard" element={<DashboardPage />} />
         <Route path="profile" element={<ProfileOverviewPage />} />
-        
-        {/* Protected routes - require authentication */}
-        <Route
-          path="dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="questionnaire"
-          element={
-            <ProtectedRoute>
-              <QuestionnairePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="opportunities"
-          element={
-            <ProtectedRoute>
-              <OpportunitiesListPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="analytics"
-          element={
-            <ProtectedRoute>
-              <AnalyticsDashboardPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="questionnaire" element={<QuestionnairePage />} />
+        <Route path="opportunities" element={<OpportunitiesListPage />} />
+        <Route path="analytics" element={<AnalyticsDashboardPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -361,3 +361,9 @@ Each feature module has a `services/` folder containing:
 - **Tablet**: Two-column layouts, sidebar as drawer
 - **Desktop**: Full sidebar, multi-column grids, expanded views
 
+
+
+
+
+
+

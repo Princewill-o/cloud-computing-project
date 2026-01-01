@@ -16,15 +16,15 @@
   }
 
   .dark {
-    /* Dark green mode colors */
-    --bg-primary: 15 28 20;
-    --bg-secondary: 22 40 28;
-    --bg-tertiary: 30 55 38;
-    --text-primary: 240 253 244;
-    --text-secondary: 187 247 208;
-    --text-tertiary: 134 239 172;
-    --border-color: 34 60 44;
-    --border-hover: 45 75 55;
+    /* True black dark mode colors */
+    --bg-primary: 0 0 0;
+    --bg-secondary: 17 17 17;
+    --bg-tertiary: 34 34 34;
+    --text-primary: 255 255 255;
+    --text-secondary: 200 200 200;
+    --text-tertiary: 150 150 150;
+    --border-color: 51 51 51;
+    --border-hover: 68 68 68;
   }
 
   body {
