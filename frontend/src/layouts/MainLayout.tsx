@@ -137,85 +137,60 @@ export function MainLayout() {
       </Sidebar>
 
       <div className="flex-1 flex flex-col">
-        {/* Top Navigation Bar */}
-        <header className="h-14 border-b border-border flex items-center justify-between px-4 md:px-6 bg-secondary sticky top-0 z-10">
-          <div className="flex items-center gap-4">
-            {/* Mobile menu button */}
-            <button
-              className="md:hidden p-2 rounded-md hover:bg-tertiary transition-colors"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              aria-label="Toggle menu"
+        {/* Mobile menu button - only visible on mobile */}
+        <div className="md:hidden flex items-center justify-between p-4 border-b border-border bg-secondary">
+          <button
+            className="p-2 rounded-md hover:bg-tertiary transition-colors"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label="Toggle menu"
+          >
+            <svg
+              className="w-5 h-5 text-primary"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
             >
-              <svg
-                className="w-5 h-5 text-primary"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                {sidebarOpen ? (
-                  <path d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
-            </button>
-            <div className="text-sm font-medium text-primary">
-              {getPageTitle()}
-            </div>
-            
-            {/* Quick Navigation Links - Hidden on mobile */}
-            <nav className="hidden lg:flex items-center gap-1 ml-8">
-              {navLinks.map((link) => {
-                const isActive = link.href === "/dashboard" 
-                  ? location.pathname === "/" || location.pathname === "/dashboard"
-                  : location.pathname === link.href;
-                return (
-                  <button
-                    key={link.href}
-                    onClick={() => navigate(link.href)}
-                    className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
-                      isActive 
-                        ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300' 
-                        : 'text-secondary hover:text-primary hover:bg-tertiary'
-                    }`}
-                  >
-                    {link.label}
-                  </button>
-                );
-              })}
-            </nav>
+              {sidebarOpen ? (
+                <path d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
+          <div className="text-sm font-medium text-primary">
+            {getPageTitle()}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <ThemeToggle />
             {isAuthenticated ? (
               <button
                 onClick={logout}
-                className="rounded-md border border-border px-3 py-1.5 text-xs text-secondary hover:bg-tertiary hover:text-primary transition-colors"
+                className="rounded-md border border-border px-2 py-1 text-xs text-secondary hover:bg-tertiary hover:text-primary transition-colors"
               >
-                Log out
+                Logout
               </button>
             ) : (
-              <div className="flex gap-2">
+              <div className="flex gap-1">
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => navigate("/login")}
                 >
-                  Log In
+                  Login
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => navigate("/register")}
                 >
-                  Sign Up
+                  Register
                 </Button>
               </div>
             )}
           </div>
-        </header>
+        </div>
         <main className="flex-1 p-4 md:p-6 overflow-y-auto">
           <Outlet />
         </main>
