@@ -738,72 +738,6 @@ async def get_career_advice():
         "source": "local_fallback"
     }
 
-@app.get("/api/v1/external/fun-fact")
-async def get_fun_fact():
-    """Get a fun fact from Cat Facts API"""
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get("https://catfact.ninja/fact") as response:
-                if response.status == 200:
-                    data = await response.json()
-                    return {
-                        "fact": {
-                            "content": data.get("fact", ""),
-                            "length": data.get("length", 0),
-                            "category": "animals"
-                        },
-                        "timestamp": datetime.utcnow().isoformat(),
-                        "source": "catfact_api"
-                    }
-    except Exception as e:
-        print(f"Error fetching fun fact: {e}")
-    
-    # Fallback fact
-    return {
-        "fact": {
-            "content": "The average person spends about 90,000 hours at work during their lifetime.",
-            "length": 82,
-            "category": "career"
-        },
-        "timestamp": datetime.utcnow().isoformat(),
-        "source": "local_fallback"
-    }
-
-@app.get("/api/v1/external/joke")
-async def get_programming_joke():
-    """Get a programming joke from Official Joke API"""
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get("https://official-joke-api.appspot.com/jokes/programming/random") as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if data and len(data) > 0:
-                        joke_data = data[0]
-                        return {
-                            "joke": {
-                                "id": joke_data.get("id"),
-                                "type": joke_data.get("type", "programming"),
-                                "setup": joke_data.get("setup", ""),
-                                "punchline": joke_data.get("punchline", "")
-                            },
-                            "timestamp": datetime.utcnow().isoformat(),
-                            "source": "official_joke_api"
-                        }
-    except Exception as e:
-        print(f"Error fetching joke: {e}")
-    
-    # Fallback joke
-    return {
-        "joke": {
-            "id": 1,
-            "type": "programming",
-            "setup": "Why do programmers prefer dark mode?",
-            "punchline": "Because light attracts bugs!"
-        },
-        "timestamp": datetime.utcnow().isoformat(),
-        "source": "local_fallback"
-    }
-
 @app.get("/api/v1/external/industry-news")
 async def get_industry_news(limit: int = 5):
     """Get latest tech/career industry news from Hacker News API"""
@@ -995,6 +929,131 @@ async def get_market_insights():
     }
     
     return base_data
+
+# Injection endpoints for job data ingestion
+@app.get("/api/v1/ingestion/config")
+async def get_ingestion_config():
+    """Get current ingestion configuration"""
+    return {
+        "sources": [
+            {
+                "id": "jsearch",
+                "name": "JSearch API",
+                "url": "https://jsearch.p.rapidapi.com/search",
+                "enabled": True,
+                "lastSync": datetime.utcnow().isoformat(),
+                "totalJobs": 8500,
+                "status": "active"
+            },
+            {
+                "id": "github_jobs",
+                "name": "GitHub Jobs",
+                "url": "https://jobs.github.com/positions.json",
+                "enabled": False,
+                "lastSync": datetime.utcnow().isoformat(),
+                "totalJobs": 0,
+                "status": "inactive"
+            }
+        ],
+        "batchSize": 100,
+        "syncInterval": 60,
+        "autoSync": True,
+        "transformRules": [
+            {
+                "field": "salary",
+                "operation": "normalize",
+                "parameters": {"currency": "USD"}
+            },
+            {
+                "field": "skills",
+                "operation": "extract",
+                "parameters": {"source": "description"}
+            }
+        ]
+    }
+
+@app.post("/api/v1/ingestion/trigger")
+async def trigger_ingestion(request_data: dict = None):
+    """Trigger manual job ingestion"""
+    import uuid
+    job_id = str(uuid.uuid4())
+    
+    return {
+        "id": job_id,
+        "sourceId": request_data.get("sourceId") if request_data else None,
+        "status": "running",
+        "startTime": datetime.utcnow().isoformat(),
+        "recordsProcessed": 0,
+        "recordsInserted": 0,
+        "errors": [],
+        "progress": 25
+    }
+
+@app.get("/api/v1/ingestion/jobs")
+async def get_ingestion_history(limit: int = 10):
+    """Get ingestion job history"""
+    import uuid
+    
+    jobs = []
+    for i in range(min(limit, 5)):
+        status = ["completed", "running", "failed"][i % 3]
+        jobs.append({
+            "id": str(uuid.uuid4()),
+            "sourceId": "jsearch" if i % 2 == 0 else "github_jobs",
+            "status": status,
+            "startTime": datetime.utcnow().isoformat(),
+            "endTime": datetime.utcnow().isoformat() if status != "running" else None,
+            "recordsProcessed": 100 - (i * 10),
+            "recordsInserted": 95 - (i * 10) if status == "completed" else 0,
+            "errors": [] if status == "completed" else ["Connection timeout"] if status == "failed" else [],
+            "progress": 100 if status == "completed" else 75 if status == "running" else 0
+        })
+    
+    return {"jobs": jobs}
+
+@app.get("/api/v1/ingestion/stats")
+async def get_ingestion_stats():
+    """Get ingestion statistics"""
+    return {
+        "totalJobs": 15420,
+        "jobsToday": 234,
+        "jobsThisWeek": 1567,
+        "topSources": [
+            {"source": "JSearch API", "count": 8500, "percentage": 55.1},
+            {"source": "Company APIs", "count": 4200, "percentage": 27.2},
+            {"source": "Web Scraping", "count": 2720, "percentage": 17.7}
+        ],
+        "topSkills": [
+            {"skill": "JavaScript", "count": 3200, "trend": "up"},
+            {"skill": "Python", "count": 2800, "trend": "up"},
+            {"skill": "React", "count": 2400, "trend": "stable"},
+            {"skill": "Node.js", "count": 2100, "trend": "up"},
+            {"skill": "AWS", "count": 1900, "trend": "up"}
+        ],
+        "topLocations": [
+            {"location": "Remote", "count": 4500, "avgSalary": 95000},
+            {"location": "San Francisco, CA", "count": 2100, "avgSalary": 145000},
+            {"location": "New York, NY", "count": 1800, "avgSalary": 125000},
+            {"location": "Seattle, WA", "count": 1200, "avgSalary": 115000},
+            {"location": "Austin, TX", "count": 900, "avgSalary": 105000}
+        ],
+        "lastUpdate": datetime.utcnow().isoformat()
+    }
+
+@app.get("/api/v1/ingestion/quality")
+async def get_data_quality():
+    """Get data quality metrics"""
+    return {
+        "completeness": 85.2,
+        "accuracy": 92.1,
+        "freshness": 78.5,
+        "duplicates": 156,
+        "issues": [
+            {"type": "missing_salary", "count": 1200, "description": "Jobs without salary information"},
+            {"type": "invalid_location", "count": 89, "description": "Jobs with invalid location data"},
+            {"type": "duplicate_titles", "count": 156, "description": "Duplicate job postings"}
+        ]
+    }
 
 if __name__ == "__main__":
     uvicorn.run(

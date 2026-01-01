@@ -4,6 +4,7 @@ import { AuthLayout } from "../layouts/AuthLayout";
 import { LoginPage } from "../features/auth/pages/LoginPage";
 import { RegisterPage } from "../features/auth/pages/RegisterPage";
 import { DashboardPage } from "../features/dashboard/pages/DashboardPage";
+import { InjectionPage } from "../features/dashboard/pages/InjectionPage";
 import { ProfileOverviewPage } from "../features/profile/pages/ProfileOverviewPage";
 import { QuestionnairePage } from "../features/profile/pages/QuestionnairePage";
 import { OpportunitiesListPage } from "../features/opportunities/pages/OpportunitiesListPage";
@@ -22,6 +23,7 @@ export function AppRoutes() {
       <Route path="/" element={<MainLayout />}>
         <Route index element={<DashboardPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="injection" element={<InjectionPage />} />
         <Route path="profile" element={<ProfileOverviewPage />} />
         <Route path="questionnaire" element={<QuestionnairePage />} />
         <Route path="opportunities" element={<OpportunitiesListPage />} />

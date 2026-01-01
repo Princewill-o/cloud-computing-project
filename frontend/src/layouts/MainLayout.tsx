@@ -16,7 +16,8 @@ import {
   FileText,
   LogIn,
   UserPlus,
-  Home
+  Home,
+  Database
 } from "lucide-react";
 import { useState } from "react";
 
@@ -28,6 +29,7 @@ export function MainLayout() {
 
   const getPageTitle = () => {
     if (location.pathname === "/" || location.pathname === "/dashboard") return "Dashboard";
+    if (location.pathname === "/injection") return "Data Injection";
     if (location.pathname === "/profile") return "Profile";
     if (location.pathname === "/opportunities") return "Job Recommendations";
     if (location.pathname === "/analytics") return "Analytics";
@@ -43,6 +45,11 @@ export function MainLayout() {
       label: "Dashboard",
       href: "/dashboard",
       icon: <LayoutDashboard className="text-primary h-5 w-5 flex-shrink-0" />,
+    },
+    {
+      label: "Data Injection",
+      href: "/injection",
+      icon: <Database className="text-primary h-5 w-5 flex-shrink-0" />,
     },
     {
       label: "Job Recommendations",

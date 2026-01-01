@@ -186,11 +186,9 @@ export function DashboardPage() {
         {/* Motivational Quote */}
         <MotivationalQuote />
 
-        {/* Additional Features Grid */}
-        <div className="grid gap-4 md:grid-cols-3">
+        {/* Additional Features Grid - Only Working APIs */}
+        <div className="grid gap-4 md:grid-cols-1">
           <CareerAdvice />
-          <ProgrammingJoke />
-          <FunFact />
         </div>
 
         {/* News and Market Insights Grid */}
