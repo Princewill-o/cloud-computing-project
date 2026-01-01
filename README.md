@@ -77,7 +77,50 @@ frontend/
 │   └── services/          # API services
 ├── public/                # Static assets
 └── package.json          # Dependencies
+
+services/                # Fetches JSearch results and loads them into BigQuery
+└─ ingestion-service/    # NEW: JSearch → GCS → BigQuery
+      ├─ src/
+      │  ├─ jsearch.client.js      # calls JSearch
+      │  ├─ transform.js           # maps API JSON → your schema (and light cleaning)
+      │  ├─ gcs.writer.js          # writes JSONL to bucket
+      │  └─ bq.loader.js           # starts BigQuery load job (optional)
+      ├─ package.json
+      └─ Dockerfile
 ```
+
+## Backend Services
+
+### Ingestion Service (Cloud Run + Scheduler)
+- **Path:** `services/ingestion-service`
+- **Purpose:** Pull job listings from JSearch, normalize them, and load rows into BigQuery.
+- **Key endpoint:** `POST /ingest` triggers a pull from JSearch and a bulk insert into BigQuery.
+- **Environment variables:**
+    - `JSEARCH_API_KEY` – RapidAPI key for JSearch.
+    - `BQ_PROJECT_ID` – Google Cloud project containing the BigQuery dataset.
+    - `BQ_DATASET` – BigQuery dataset name (e.g., `jobs_dataset`).
+    - `BQ_TABLE` – BigQuery table name (defaults to `jobs`).
+- **Local run:**
+  ```bash
+  cd services/ingestion-service
+  pip install -r requirements.txt
+  uvicorn main:app --reload
+  ```
+
+### API Service (Cloud Run)
+- **Path:** `services/api-service`
+- **Purpose:** Provide HTTPS endpoints for the frontend, reading from BigQuery and applying simple skill-based match scores.
+- **Key endpoint:** `GET /search` for job search with query, location, and skills filters.
+- **Environment variables:**
+    - `BQ_PROJECT_ID` – Google Cloud project containing the BigQuery dataset.
+    - `BQ_DATASET` – BigQuery dataset name.
+    - `BQ_TABLE` – BigQuery table name (defaults to `jobs`).
+- **Local run:**
+  ```bash
+  cd services/api-service
+  pip install -r requirements.txt
+  uvicorn main:app --reload
+  ```
 
 ## Team Members
 
