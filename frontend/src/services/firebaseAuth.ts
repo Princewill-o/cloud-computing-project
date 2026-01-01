@@ -9,7 +9,8 @@ import {
   sendPasswordResetEmail,
   GoogleAuthProvider,
   signInWithPopup,
-  GithubAuthProvider
+  GithubAuthProvider,
+  validatePassword
 } from "firebase/auth";
 import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../config/firebase";
@@ -31,110 +32,176 @@ export interface UserProfile {
 class FirebaseAuthService {
   /**
    * Register a new user with email and password
+   * Using Firebase's createUserWithEmailAndPassword method
    */
   async register(email: string, password: string, displayName: string): Promise<UserCredential> {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Update the user's display name
-      await updateProfile(userCredential.user, {
-        displayName: displayName
+    return createUserWithEmailAndPassword(auth, email, password)
+      .then(async (userCredential) => {
+        // Signed up successfully
+        const user = userCredential.user;
+        
+        // Update the user's display name
+        await updateProfile(user, {
+          displayName: displayName
+        });
+
+        // Create user profile in Firestore
+        await this.createUserProfile(user, { displayName });
+
+        return userCredential;
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.error("Registration error:", errorCode, errorMessage);
+        throw error;
       });
-
-      // Create user profile in Firestore
-      await this.createUserProfile(userCredential.user, { displayName });
-
-      return userCredential;
-    } catch (error) {
-      console.error("Registration error:", error);
-      throw error;
-    }
   }
 
   /**
    * Sign in with email and password
+   * Using Firebase's signInWithEmailAndPassword method
    */
   async login(email: string, password: string): Promise<UserCredential> {
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      
-      // Update last login time
-      await this.updateLastLogin(userCredential.user.uid);
-      
-      return userCredential;
-    } catch (error) {
-      console.error("Login error:", error);
-      throw error;
-    }
+    return signInWithEmailAndPassword(auth, email, password)
+      .then(async (userCredential) => {
+        // Signed in successfully
+        const user = userCredential.user;
+        
+        // Update last login time
+        await this.updateLastLogin(user.uid);
+        
+        return userCredential;
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.error("Login error:", errorCode, errorMessage);
+        throw error;
+      });
   }
 
   /**
    * Sign in with Google
    */
   async signInWithGoogle(): Promise<UserCredential> {
-    try {
-      const provider = new GoogleAuthProvider();
-      const userCredential = await signInWithPopup(auth, provider);
-      
-      // Check if this is a new user and create profile if needed
-      const userDoc = await getDoc(doc(db, "users", userCredential.user.uid));
-      if (!userDoc.exists()) {
-        await this.createUserProfile(userCredential.user);
-      } else {
-        await this.updateLastLogin(userCredential.user.uid);
-      }
-      
-      return userCredential;
-    } catch (error) {
-      console.error("Google sign-in error:", error);
-      throw error;
-    }
+    const provider = new GoogleAuthProvider();
+    return signInWithPopup(auth, provider)
+      .then(async (userCredential) => {
+        // Check if this is a new user and create profile if needed
+        const userDoc = await getDoc(doc(db, "users", userCredential.user.uid));
+        if (!userDoc.exists()) {
+          await this.createUserProfile(userCredential.user);
+        } else {
+          await this.updateLastLogin(userCredential.user.uid);
+        }
+        
+        return userCredential;
+      })
+      .catch((error) => {
+        console.error("Google sign-in error:", error);
+        throw error;
+      });
   }
 
   /**
    * Sign in with GitHub
    */
   async signInWithGitHub(): Promise<UserCredential> {
-    try {
-      const provider = new GithubAuthProvider();
-      const userCredential = await signInWithPopup(auth, provider);
-      
-      // Check if this is a new user and create profile if needed
-      const userDoc = await getDoc(doc(db, "users", userCredential.user.uid));
-      if (!userDoc.exists()) {
-        await this.createUserProfile(userCredential.user);
-      } else {
-        await this.updateLastLogin(userCredential.user.uid);
-      }
-      
-      return userCredential;
-    } catch (error) {
-      console.error("GitHub sign-in error:", error);
-      throw error;
-    }
+    const provider = new GithubAuthProvider();
+    return signInWithPopup(auth, provider)
+      .then(async (userCredential) => {
+        // Check if this is a new user and create profile if needed
+        const userDoc = await getDoc(doc(db, "users", userCredential.user.uid));
+        if (!userDoc.exists()) {
+          await this.createUserProfile(userCredential.user);
+        } else {
+          await this.updateLastLogin(userCredential.user.uid);
+        }
+        
+        return userCredential;
+      })
+      .catch((error) => {
+        console.error("GitHub sign-in error:", error);
+        throw error;
+      });
   }
 
   /**
    * Sign out the current user
+   * Using Firebase's signOut method
    */
   async logout(): Promise<void> {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error("Logout error:", error);
-      throw error;
-    }
+    return signOut(auth)
+      .then(() => {
+        // Sign-out successful
+        console.log("User signed out successfully");
+      })
+      .catch((error) => {
+        // An error happened
+        console.error("Logout error:", error);
+        throw error;
+      });
   }
 
   /**
    * Send password reset email
    */
   async resetPassword(email: string): Promise<void> {
+    return sendPasswordResetEmail(auth, email)
+      .then(() => {
+        console.log("Password reset email sent successfully");
+      })
+      .catch((error) => {
+        console.error("Password reset error:", error);
+        throw error;
+      });
+  }
+
+  /**
+   * Validate password against Firebase policy
+   */
+  async validatePassword(password: string): Promise<{
+    isValid: boolean;
+    containsLowercaseLetter?: boolean;
+    containsUppercaseLetter?: boolean;
+    containsNumericCharacter?: boolean;
+    containsNonAlphanumericCharacter?: boolean;
+    meetsMinPasswordLength?: boolean;
+  }> {
     try {
-      await sendPasswordResetEmail(auth, email);
+      const status = await validatePassword(auth, password);
+      
+      if (!status.isValid) {
+        // Password could not be validated. Use the status to show what
+        // requirements are met and which are missing.
+        
+        // If a criterion is undefined, it is not required by policy. If the
+        // criterion is defined but false, it is required but not fulfilled by
+        // the given password.
+        const needsLowerCase = status.containsLowercaseLetter !== true;
+        const needsUpperCase = status.containsUppercaseLetter !== true;
+        const needsNumeric = status.containsNumericCharacter !== true;
+        const needsNonAlphanumeric = status.containsNonAlphanumericCharacter !== true;
+        const needsMinLength = status.meetsMinPasswordLength !== true;
+        
+        console.log("Password validation failed:", {
+          needsLowerCase,
+          needsUpperCase,
+          needsNumeric,
+          needsNonAlphanumeric,
+          needsMinLength
+        });
+      }
+      
+      return status;
     } catch (error) {
-      console.error("Password reset error:", error);
-      throw error;
+      console.error("Password validation error:", error);
+      // Return basic validation if Firebase validation fails
+      return {
+        isValid: password.length >= 6,
+        meetsMinPasswordLength: password.length >= 6
+      };
     }
   }
 

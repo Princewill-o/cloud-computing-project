@@ -3,6 +3,7 @@ import { useNavigate, NavLink } from "react-router-dom";
 import { Button } from "../../../shared/components/ui/Button";
 import { Input } from "../../../shared/components/ui/Input";
 import { useAuth } from "../hooks/useAuth";
+import { firebaseAuthService } from "../../../services/firebaseAuth";
 
 export function RegisterPage() {
   const { register, loginWithGoogle, loginWithGitHub } = useAuth();
@@ -18,6 +19,56 @@ export function RegisterPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isGitHubLoading, setIsGitHubLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [passwordValidation, setPasswordValidation] = useState<{
+    isValid: boolean;
+    requirements: string[];
+  }>({ isValid: false, requirements: [] });
+
+  const validatePasswordStrength = async (password: string) => {
+    if (!password) {
+      setPasswordValidation({ isValid: false, requirements: [] });
+      return;
+    }
+
+    try {
+      const validation = await firebaseAuthService.validatePassword(password);
+      const requirements: string[] = [];
+
+      if (validation.containsLowercaseLetter === false) {
+        requirements.push("Include lowercase letters");
+      }
+      if (validation.containsUppercaseLetter === false) {
+        requirements.push("Include uppercase letters");
+      }
+      if (validation.containsNumericCharacter === false) {
+        requirements.push("Include numbers");
+      }
+      if (validation.containsNonAlphanumericCharacter === false) {
+        requirements.push("Include special characters");
+      }
+      if (validation.meetsMinPasswordLength === false) {
+        requirements.push("At least 6 characters long");
+      }
+
+      setPasswordValidation({
+        isValid: validation.isValid,
+        requirements
+      });
+    } catch (error) {
+      // Fallback validation
+      const requirements: string[] = [];
+      if (password.length < 6) requirements.push("At least 6 characters long");
+      if (!/[a-z]/.test(password)) requirements.push("Include lowercase letters");
+      if (!/[A-Z]/.test(password)) requirements.push("Include uppercase letters");
+      if (!/\d/.test(password)) requirements.push("Include numbers");
+      if (!/[^a-zA-Z0-9]/.test(password)) requirements.push("Include special characters");
+
+      setPasswordValidation({
+        isValid: requirements.length === 0,
+        requirements
+      });
+    }
+  };
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -30,8 +81,8 @@ export function RegisterPage() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (!passwordValidation.isValid) {
+      setError("Password does not meet security requirements");
       setIsSubmitting(false);
       return;
     }
@@ -129,15 +180,36 @@ export function RegisterPage() {
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
         />
-        <Input
-          label="Password"
-          type="password"
-          autoComplete="new-password"
-          required
-          value={formData.password}
-          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-          helperText="Must be at least 6 characters"
-        />
+        <div>
+          <Input
+            label="Password"
+            type="password"
+            autoComplete="new-password"
+            required
+            value={formData.password}
+            onChange={(e) => {
+              setFormData({ ...formData, password: e.target.value });
+              validatePasswordStrength(e.target.value);
+            }}
+          />
+          {formData.password && (
+            <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+              <p className={`text-xs font-medium ${passwordValidation.isValid ? 'text-green-600' : 'text-orange-600'}`}>
+                {passwordValidation.isValid ? '✓ Password meets all requirements' : 'Password requirements:'}
+              </p>
+              {!passwordValidation.isValid && (
+                <ul className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                  {passwordValidation.requirements.map((req, index) => (
+                    <li key={index} className="flex items-center">
+                      <span className="mr-1">•</span>
+                      {req}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
         <Input
           label="Confirm Password"
           type="password"
