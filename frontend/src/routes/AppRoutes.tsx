@@ -9,25 +9,54 @@ import { ProfileOverviewPage } from "../features/profile/pages/ProfileOverviewPa
 import { QuestionnairePage } from "../features/profile/pages/QuestionnairePage";
 import { OpportunitiesListPage } from "../features/opportunities/pages/OpportunitiesListPage";
 import { AnalyticsDashboardPage } from "../features/analytics/pages/AnalyticsDashboardPage";
+import { ProtectedRoute } from "../shared/components/auth/ProtectedRoute";
 
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Auth pages - accessible without login */}
+      {/* Auth pages - public access */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
       </Route>
 
-      {/* Main app - ALL PAGES NOW PUBLIC FOR TESTING */}
+      {/* Main app - PROTECTED ROUTES */}
       <Route path="/" element={<MainLayout />}>
-        <Route index element={<DashboardPage />} />
-        <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="injection" element={<InjectionPage />} />
-        <Route path="profile" element={<ProfileOverviewPage />} />
-        <Route path="questionnaire" element={<QuestionnairePage />} />
-        <Route path="opportunities" element={<OpportunitiesListPage />} />
-        <Route path="analytics" element={<AnalyticsDashboardPage />} />
+        <Route index element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        } />
+        <Route path="dashboard" element={
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        } />
+        <Route path="injection" element={
+          <ProtectedRoute>
+            <InjectionPage />
+          </ProtectedRoute>
+        } />
+        <Route path="profile" element={
+          <ProtectedRoute>
+            <ProfileOverviewPage />
+          </ProtectedRoute>
+        } />
+        <Route path="questionnaire" element={
+          <ProtectedRoute>
+            <QuestionnairePage />
+          </ProtectedRoute>
+        } />
+        <Route path="opportunities" element={
+          <ProtectedRoute>
+            <OpportunitiesListPage />
+          </ProtectedRoute>
+        } />
+        <Route path="analytics" element={
+          <ProtectedRoute>
+            <AnalyticsDashboardPage />
+          </ProtectedRoute>
+        } />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
