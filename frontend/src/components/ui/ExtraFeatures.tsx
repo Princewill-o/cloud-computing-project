@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../shared/components/ui/Card";
+import { Card, CardContent, CardHeader, CardTitle } from "../../shared/components/ui/Card";
 import { Button } from "../../shared/components/ui/Button";
 import { httpClient } from "../../services/httpClient";
 

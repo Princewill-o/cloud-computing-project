@@ -7,7 +7,7 @@ import { analyticsService } from "../../analytics/services/analyticsService";
 import { MotivationalQuote } from "../../../components/ui/MotivationalQuote";
 import { IndustryNews } from "../../../components/ui/IndustryNews";
 import { MarketInsights } from "../../../components/ui/MarketInsights";
-import { CareerAdvice, ProgrammingJoke, FunFact } from "../../../components/ui/ExtraFeatures";
+import { CareerAdvice } from "../../../components/ui/ExtraFeatures";
 
 export function DashboardPage() {
   const navigate = useNavigate();
