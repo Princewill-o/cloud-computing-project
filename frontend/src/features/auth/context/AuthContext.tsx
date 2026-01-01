@@ -109,15 +109,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const updateProfile = async (data: Partial<UserProfile>): Promise<void> => {
     if (!user) throw new Error("No user logged in");
     
-    try {
-      await firebaseAuthService.updateUserProfile(user.id, data);
-      // Refresh user data
-      const updatedProfile = await firebaseAuthService.getUserProfile(user.id);
-      if (updatedProfile) {
-        setUser(prev => prev ? { ...prev, profile: updatedProfile } : null);
-      }
-    } catch (error) {
-      throw error;
+    await firebaseAuthService.updateUserProfile(user.id, data);
+    // Refresh user data
+    const updatedProfile = await firebaseAuthService.getUserProfile(user.id);
+    if (updatedProfile) {
+      setUser(prev => prev ? { ...prev, profile: updatedProfile } : null);
     }
   };
 
