@@ -58,64 +58,52 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const login = async (email: string, password: string): Promise<void> => {
+    setLoading(true);
     try {
-      setLoading(true);
       await firebaseAuthService.login(email, password);
       // User state will be updated by the onAuthStateChanged listener
-    } catch (error) {
+    } finally {
       setLoading(false);
-      throw error;
     }
   };
 
   const register = async (email: string, password: string, displayName: string): Promise<void> => {
+    setLoading(true);
     try {
-      setLoading(true);
       await firebaseAuthService.register(email, password, displayName);
       // User state will be updated by the onAuthStateChanged listener
-    } catch (error) {
+    } finally {
       setLoading(false);
-      throw error;
     }
   };
 
   const loginWithGoogle = async (): Promise<void> => {
+    setLoading(true);
     try {
-      setLoading(true);
       await firebaseAuthService.signInWithGoogle();
       // User state will be updated by the onAuthStateChanged listener
-    } catch (error) {
+    } finally {
       setLoading(false);
-      throw error;
     }
   };
 
   const loginWithGitHub = async (): Promise<void> => {
+    setLoading(true);
     try {
-      setLoading(true);
       await firebaseAuthService.signInWithGitHub();
       // User state will be updated by the onAuthStateChanged listener
-    } catch (error) {
+    } finally {
       setLoading(false);
-      throw error;
     }
   };
 
   const logout = async (): Promise<void> => {
-    try {
-      await firebaseAuthService.logout();
-      // User state will be updated by the onAuthStateChanged listener
-    } catch (error) {
-      throw error;
-    }
+    await firebaseAuthService.logout();
+    // User state will be updated by the onAuthStateChanged listener
   };
 
   const resetPassword = async (email: string): Promise<void> => {
-    try {
-      await firebaseAuthService.resetPassword(email);
-    } catch (error) {
-      throw error;
-    }
+    await firebaseAuthService.resetPassword(email);
   };
 
   const updateProfile = async (data: Partial<UserProfile>): Promise<void> => {
