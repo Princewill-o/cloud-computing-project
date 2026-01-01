@@ -193,10 +193,28 @@ The frontend will be available at: http://localhost:5174
 │   │   │   └── vertex_ai_service.py
 │   │   └── terraform/            # Infrastructure as Code
 │   └── requirements.txt
+├── services/                      # Cloud ingestion services
+│   └── ingestion-service/         # JSearch → GCS → BigQuery
+│       ├── src/
+│       │   ├── jsearch.client.js  # calls JSearch API
+│       │   ├── transform.js       # maps API JSON to schema
+│       │   ├── gcs.writer.js      # writes JSONL to bucket
+│       │   └── bq.loader.js       # starts BigQuery load job
+│       ├── package.json
+│       └── Dockerfile
 └── README.md
 ```
 
 ## 🌐 External API Integrations
+    - `BQ_PROJECT_ID` – Google Cloud project containing the BigQuery dataset.
+    - `BQ_DATASET` – BigQuery dataset name.
+    - `BQ_TABLE` – BigQuery table name (defaults to `jobs`).
+- **Local run:**
+  ```bash
+  cd services/api-service
+  pip install -r requirements.txt
+  uvicorn main:app --reload
+  ```
 
 - **Adzuna Jobs API**: Real job listings
 - **Quotable API**: Motivational quotes

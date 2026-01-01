@@ -1,0 +1,79 @@
+  options:
+    logging: CLOUD_LOGGING_ONLY
+
+  substitutions:
+    _REGION: us-central1
+    _AR_REPO: cloud-run
+    _BQ_DATASET: jobs_ds
+    _BQ_TABLE: job_data_table
+    _API_SERVICE_NAME: api-service
+    _INGESTION_SERVICE_NAME: ingestion-service
+    _API_MAX_INSTANCES: "3"
+    _INGESTION_MAX_INSTANCES: "1"
+
+  steps:
+    # Build and push the ingestion service image.
+    - name: gcr.io/cloud-builders/docker
+      id: build-ingestion
+      args:
+        - build
+        - "-t"
+        - "us-${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_INGESTION_SERVICE_NAME}:${SHORT_SHA}"
+        - "services/ingestion-service"
+
+    - name: gcr.io/cloud-builders/docker
+      id: push-ingestion
+      args:
+        - push
+        - "us-${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_INGESTION_SERVICE_NAME}:${SHORT_SHA}"
+
+    # Build and push the API service image.
+    - name: gcr.io/cloud-builders/docker
+      id: build-api
+      args:
+        - build
+        - "-t"
+        - "us-${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_API_SERVICE_NAME}:${SHORT_SHA}"
+        - "services/api-service"
+
+    - name: gcr.io/cloud-builders/docker
+      id: push-api
+      args:
+        - push
+        - "us-${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_API_SERVICE_NAME}:${SHORT_SHA}"
+
+    # Deploy ingestion service to Cloud Run (use authenticated access for Scheduler triggers).
+    - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+      id: deploy-ingestion
+      entrypoint: gcloud
+      args:
+        - run
+        - deploy
+        - ${_INGESTION_SERVICE_NAME}
+        - "--image=us-${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_INGESTION_SERVICE_NAME}:${SHORT_SHA}"
+        - "--region=${_REGION}"
+        - "--platform=managed"
+        - "--service-account=${_INGESTION_SERVICE_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
+        - "--no-allow-unauthenticated"
+        - "--max-instances=${_INGESTION_MAX_INSTANCES}"
+        - "--set-env-vars=BQ_PROJECT_ID=${PROJECT_ID},BQ_DATASET=${_BQ_DATASET},BQ_TABLE=${_BQ_TABLE}"
+        - "--set-secrets=JSEARCH_API_KEY=JSEARCH_API_KEY:latest"
+
+    # Deploy API service to Cloud Run (public HTTPS for the frontend).
+    - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+      id: deploy-api
+      entrypoint: gcloud
+      args:
+        - run
+        - deploy
+        - ${_API_SERVICE_NAME}
+        - "--image=us-${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_API_SERVICE_NAME}:${SHORT_SHA}"
+        - "--region=${_REGION}"
+        - "--platform=managed"
+        - "--allow-unauthenticated"
+        - "--max-instances=${_API_MAX_INSTANCES}"
+        - "--set-env-vars=BQ_PROJECT_ID=${PROJECT_ID},BQ_DATASET=${_BQ_DATASET},BQ_TABLE=${_BQ_TABLE}"
+
+  images:
+    - "us-${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_INGESTION_SERVICE_NAME}:${SHORT_SHA}"
+    - "us-${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_API_SERVICE_NAME}:${SHORT_SHA}"
