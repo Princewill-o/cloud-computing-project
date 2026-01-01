@@ -79,7 +79,7 @@ export function MainLayout() {
   ];
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-slate-50 via-purple-50/30 to-blue-50/50 dark:from-black dark:via-purple-900/10 dark:to-blue-900/20">
+    <div className="min-h-screen flex bg-gradient-to-br from-slate-50 via-purple-50/20 to-blue-50/30 dark:from-black dark:via-purple-900/5 dark:to-blue-900/10">
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen}>
         <SidebarBody className="justify-between gap-10">
           <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
@@ -96,7 +96,7 @@ export function MainLayout() {
                 return (
                   <div key={idx} className="relative group">
                     {isActive && (
-                      <div className={`absolute inset-0 bg-gradient-to-r ${link.gradient} opacity-10 rounded-lg animate-pulse-slow`}></div>
+                      <div className={`absolute inset-0 bg-gradient-to-r ${link.gradient} opacity-5 rounded-lg`}></div>
                     )}
                     <SidebarLink
                       link={link}
@@ -134,14 +134,14 @@ export function MainLayout() {
           </div>
           {isAuthenticated && user && (
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-lg blur-sm"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg"></div>
               <div className="relative">
                 <SidebarLink
                   link={{
                     label: user.name || "User",
                     href: "/profile",
                     icon: (
-                      <div className="h-7 w-7 flex-shrink-0 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs font-medium shadow-lg">
+                      <div className="h-7 w-7 flex-shrink-0 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs font-medium shadow-md">
                         {(user.name || user.email || "U").charAt(0).toUpperCase()}
                       </div>
                     ),
@@ -155,9 +155,9 @@ export function MainLayout() {
 
       <div className="flex-1 flex flex-col">
         {/* Mobile menu button - only visible on mobile */}
-        <div className="md:hidden flex items-center justify-between p-4 border-b border-border bg-gradient-to-r from-white/80 to-purple-50/80 dark:from-black/80 dark:to-purple-900/20 backdrop-blur-md">
+        <div className="md:hidden flex items-center justify-between p-4 border-b border-border bg-gradient-to-r from-white/80 to-purple-50/50 dark:from-black/80 dark:to-purple-900/10 backdrop-blur-md">
           <button
-            className="p-2 rounded-md hover:bg-gradient-to-r hover:from-purple-100 hover:to-blue-100 dark:hover:from-purple-900/30 dark:hover:to-blue-900/30 transition-all duration-300"
+            className="p-2 rounded-md hover:bg-gradient-to-r hover:from-purple-100 hover:to-blue-100 dark:hover:from-purple-900/20 dark:hover:to-blue-900/20 transition-colors duration-200"
             onClick={() => setSidebarOpen(!sidebarOpen)}
             aria-label="Toggle menu"
           >
@@ -185,7 +185,7 @@ export function MainLayout() {
             {isAuthenticated ? (
               <button
                 onClick={logout}
-                className="rounded-md border border-border px-2 py-1 text-xs text-secondary hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900/20 dark:hover:to-pink-900/20 hover:text-primary transition-all duration-300"
+                className="rounded-md border border-border px-2 py-1 text-xs text-secondary hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900/10 dark:hover:to-pink-900/10 hover:text-primary transition-colors duration-200"
               >
                 Logout
               </button>
@@ -195,7 +195,7 @@ export function MainLayout() {
                   size="sm"
                   variant="outline"
                   onClick={() => navigate("/login")}
-                  className="hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 dark:hover:from-purple-900/20 dark:hover:to-blue-900/20"
+                  className="hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 dark:hover:from-purple-900/10 dark:hover:to-blue-900/10"
                 >
                   Login
                 </Button>
@@ -211,9 +211,7 @@ export function MainLayout() {
           </div>
         </div>
         <main className="flex-1 p-4 md:p-6 overflow-y-auto">
-          <div className="animate-float">
-            <Outlet />
-          </div>
+          <Outlet />
         </main>
       </div>
     </div>

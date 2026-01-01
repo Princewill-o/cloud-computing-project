@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Light mode colors - More vibrant */
+    /* Light mode colors - Subtle and professional */
     --bg-primary: 255 255 255;
     --bg-secondary: 248 250 252;
     --bg-tertiary: 241 245 249;
@@ -14,16 +14,14 @@
     --border-color: 226 232 240;
     --border-hover: 203 213 225;
     
-    /* Vibrant accent colors */
+    /* Subtle accent colors */
     --accent-purple: 147 51 234;
     --accent-blue: 59 130 246;
     --accent-green: 34 197 94;
-    --accent-orange: 249 115 22;
-    --accent-pink: 236 72 153;
   }
 
   .dark {
-    /* True black dark mode colors with vibrant accents */
+    /* True black dark mode colors */
     --bg-primary: 0 0 0;
     --bg-secondary: 17 17 17;
     --bg-tertiary: 34 34 34;
@@ -33,16 +31,14 @@
     --border-color: 51 51 51;
     --border-hover: 68 68 68;
     
-    /* Enhanced vibrant accents for dark mode */
+    /* Subtle accents for dark mode */
     --accent-purple: 168 85 247;
     --accent-blue: 96 165 250;
     --accent-green: 74 222 128;
-    --accent-orange: 251 146 60;
-    --accent-pink: 244 114 182;
   }
 
   body {
-    @apply bg-gradient-to-br from-[rgb(var(--bg-primary))] via-purple-50/30 to-blue-50/30 dark:from-[rgb(var(--bg-primary))] dark:via-purple-900/10 dark:to-blue-900/10 text-[rgb(var(--text-primary))] antialiased transition-all duration-300;
+    @apply bg-gradient-to-br from-[rgb(var(--bg-primary))] via-purple-50/20 to-blue-50/20 dark:from-[rgb(var(--bg-primary))] dark:via-purple-900/5 dark:to-blue-900/5 text-[rgb(var(--text-primary))] antialiased transition-colors duration-200;
     min-height: 100vh;
   }
 
@@ -53,51 +49,40 @@
 
 @layer components {
   .card {
-    @apply rounded-xl border border-[rgb(var(--border-color))] bg-gradient-to-br from-[rgb(var(--bg-secondary))] to-[rgb(var(--bg-tertiary))]/50 p-6 transition-all duration-300 shadow-sm hover:shadow-lg backdrop-blur-sm;
+    @apply rounded-xl border border-[rgb(var(--border-color))] bg-gradient-to-br from-[rgb(var(--bg-secondary))] to-[rgb(var(--bg-tertiary))]/30 p-6 transition-all duration-200 shadow-sm hover:shadow-md backdrop-blur-sm;
   }
 
   .card-hover {
-    @apply card hover:border-[rgb(var(--border-hover))] hover:shadow-xl hover:scale-[1.02] transition-all duration-300;
+    @apply card hover:border-[rgb(var(--border-hover))] hover:shadow-lg transition-all duration-200;
   }
 
   .card-vibrant {
-    @apply rounded-xl border-0 bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-indigo-500/10 dark:from-purple-500/20 dark:via-blue-500/20 dark:to-indigo-500/20 p-6 transition-all duration-300 shadow-lg hover:shadow-xl backdrop-blur-sm;
+    @apply rounded-xl border-0 bg-gradient-to-br from-purple-500/5 via-blue-500/5 to-indigo-500/5 dark:from-purple-500/10 dark:via-blue-500/10 dark:to-indigo-500/10 p-6 transition-all duration-200 shadow-md backdrop-blur-sm;
   }
 
   .input-base {
-    @apply w-full rounded-lg border border-[rgb(var(--border-color))] bg-gradient-to-r from-[rgb(var(--bg-primary))] to-[rgb(var(--bg-secondary))]/50 px-4 py-2 text-sm text-[rgb(var(--text-primary))] placeholder:text-[rgb(var(--text-tertiary))] focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all duration-300;
+    @apply w-full rounded-lg border border-[rgb(var(--border-color))] bg-gradient-to-r from-[rgb(var(--bg-primary))] to-[rgb(var(--bg-secondary))]/30 px-4 py-2 text-sm text-[rgb(var(--text-primary))] placeholder:text-[rgb(var(--text-tertiary))] focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all duration-200;
   }
 
   .btn-base {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95;
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-gradient {
-    @apply btn-base bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl;
+    @apply btn-base bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-md hover:shadow-lg;
   }
 
   .gradient-text {
     @apply bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 dark:from-purple-400 dark:via-blue-400 dark:to-indigo-400 bg-clip-text text-transparent;
   }
 
+  /* Reduced animations - only essential ones */
   .animate-float {
-    animation: float 6s ease-in-out infinite;
+    animation: float 8s ease-in-out infinite;
   }
 
   .animate-pulse-slow {
-    animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-
-  .animate-bounce-slow {
-    animation: bounce 3s infinite;
-  }
-
-  .glass-effect {
-    @apply bg-white/10 dark:bg-white/5 backdrop-blur-md border border-white/20 dark:border-white/10;
-  }
-
-  .neon-glow {
-    @apply shadow-lg shadow-purple-500/25 dark:shadow-purple-400/25;
+    animation: pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 }
 
@@ -106,33 +91,13 @@
     transform: translateY(0px);
   }
   50% {
-    transform: translateY(-10px);
+    transform: translateY(-5px);
   }
 }
 
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-.shimmer {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
-}
-
-/* Scrollbar styling */
+/* Simplified scrollbar styling */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -140,9 +105,9 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gradient-to-b from-purple-500 to-blue-500 rounded-full;
+  @apply bg-gradient-to-b from-purple-400 to-blue-400 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply from-purple-600 to-blue-600;
+  @apply from-purple-500 to-blue-500;
 }
