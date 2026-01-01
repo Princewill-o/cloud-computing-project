@@ -1,5 +1,5 @@
 # FastAPI and core dependencies
-fastapi==0.104.1
+fastapi==0.128.0
 uvicorn[standard]==0.24.0
 python-multipart==0.0.6
 websockets==12.0
@@ -17,7 +17,7 @@ passlib[bcrypt]==1.7.4
 spacy==3.7.2
 scikit-learn==1.3.2
 pandas==2.1.3
-numpy==1.25.2
+numpy==2.4.0
 
 # PDF/Document processing
 PyPDF2==3.0.1
@@ -31,6 +31,8 @@ google-cloud-pubsub==2.18.4
 google-cloud-monitoring==2.16.0
 google-cloud-logging==3.8.0
 google-cloud-aiplatform==1.38.1
+google-cloud-bigquery==3.39.0
+google-genai==1.56.0
 
 # Redis for caching
 redis==5.0.1
