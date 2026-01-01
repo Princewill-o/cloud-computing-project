@@ -54,8 +54,9 @@ export function RegisterPage() {
         isValid: validation.isValid,
         requirements
       });
-    } catch (error) {
+    } catch (err) {
       // Fallback validation
+      console.error("Password validation error:", err);
       const requirements: string[] = [];
       if (password.length < 6) requirements.push("At least 6 characters long");
       if (!/[a-z]/.test(password)) requirements.push("Include lowercase letters");
