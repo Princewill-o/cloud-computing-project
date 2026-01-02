@@ -17,6 +17,12 @@ export interface Opportunity {
   remote_friendly?: boolean;
   experience_level?: string;
   company_size?: string;
+  // Paraphrasing-specific properties
+  paraphrasing_potential?: number;
+  estimated_paraphrasing_time?: string;
+  success_rate_improvement?: string;
+  paraphrasing_benefits?: string[];
+  cv_optimization_areas?: string[];
 }
 
 export interface OpportunitiesResponse {
@@ -94,7 +100,7 @@ export const recommendationsService = {
 
   async getCourses(skillGap?: string): Promise<{ courses: RecommendedCourse[] }> {
     const queryParams = skillGap ? `?skill_gap=${skillGap}` : "";
-    const response = await httpClient.get<{ courses: RecommendedCourse[] }>(`/recommendations/courses${queryParams}`);
+    const response = await httpClient.get<{ courses: RecommendedCourse[] }>(`/api/v1/recommendations/courses${queryParams}`);
     return response.data;
   },
 
@@ -105,7 +111,7 @@ export const recommendationsService = {
       queryParams.append("longitude", location.longitude.toString());
       if (location.radius_km) queryParams.append("radius_km", location.radius_km.toString());
     }
-    const response = await httpClient.get<{ events: Opportunity[] }>(`/recommendations/events?${queryParams.toString()}`);
+    const response = await httpClient.get<{ events: Opportunity[] }>(`/api/v1/recommendations/events?${queryParams.toString()}`);
     return response.data;
   },
 };

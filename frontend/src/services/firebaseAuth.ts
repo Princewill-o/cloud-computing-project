@@ -23,10 +23,11 @@ export interface UserProfile {
   createdAt: string;
   lastLoginAt: string;
   profileComplete: boolean;
+  jobTitle?: string;
+  location?: string;
   skills?: string[];
   experience?: string;
-  location?: string;
-  jobTitle?: string;
+  bio?: string;
 }
 
 class FirebaseAuthService {

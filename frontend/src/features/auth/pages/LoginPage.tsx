@@ -1,18 +1,12 @@
 import { FormEvent, useState } from "react";
-import { useLocation, useNavigate, NavLink, Location } from "react-router-dom";
+import { useNavigate, NavLink } from "react-router-dom";
 import { Button } from "../../../shared/components/ui/Button";
 import { Input } from "../../../shared/components/ui/Input";
 import { useAuth } from "../hooks/useAuth";
 
-type LocationState = {
-  from?: Location;
-};
-
 export function LoginPage() {
   const { login, loginWithGoogle, loginWithGitHub, resetPassword } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const state = location.state as LocationState | null;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,7 +23,7 @@ export function LoginPage() {
 
     try {
       await login(email, password);
-      navigate(state?.from?.pathname ?? "/", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (err: any) {
       console.error("Login error:", err);
       setError(getErrorMessage(err));
@@ -44,7 +38,7 @@ export function LoginPage() {
 
     try {
       await loginWithGoogle();
-      navigate(state?.from?.pathname ?? "/", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (err: any) {
       console.error("Google login error:", err);
       setError(getErrorMessage(err));
@@ -59,7 +53,7 @@ export function LoginPage() {
 
     try {
       await loginWithGitHub();
-      navigate(state?.from?.pathname ?? "/", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (err: any) {
       console.error("GitHub login error:", err);
       setError(getErrorMessage(err));

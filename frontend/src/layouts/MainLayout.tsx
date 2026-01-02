@@ -16,7 +16,9 @@ import {
   FileText,
   LogIn,
   UserPlus,
-  Database
+  Database,
+  Settings,
+  LogOut
 } from "lucide-react";
 import { useState } from "react";
 
@@ -27,21 +29,30 @@ export function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const getPageTitle = () => {
-    if (location.pathname === "/" || location.pathname === "/dashboard") return "Dashboard";
+    if (location.pathname === "/" || location.pathname === "/dashboard") return "CV Paraphrasing Hub";
     if (location.pathname === "/injection") return "Data Injection";
-    if (location.pathname === "/profile") return "Profile";
-    if (location.pathname === "/opportunities") return "Job Recommendations";
-    if (location.pathname === "/analytics") return "Analytics";
-    if (location.pathname === "/questionnaire") return "Questionnaire";
+    if (location.pathname === "/profile") return "Profile & CV Upload";
+    if (location.pathname === "/opportunities") return "Paraphrasing Opportunities";
+    if (location.pathname === "/analytics") return "CV Analytics";
+    if (location.pathname === "/questionnaire") return "Profile Setup";
     if (location.pathname === "/login") return "Login";
     if (location.pathname === "/register") return "Register";
-    return "AI Career Guide";
+    return "AI CV Paraphrasing Platform";
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   };
 
   // Navigation links - All pages now accessible
   const navLinks = [
     {
-      label: "Dashboard",
+      label: "CV Paraphrasing Hub",
       href: "/dashboard",
       icon: <LayoutDashboard className="text-primary h-5 w-5 flex-shrink-0" />,
       gradient: "from-purple-500 to-blue-500"
@@ -53,25 +64,25 @@ export function MainLayout() {
       gradient: "from-green-500 to-teal-500"
     },
     {
-      label: "Job Recommendations",
+      label: "Paraphrasing Jobs",
       href: "/opportunities",
       icon: <Briefcase className="text-primary h-5 w-5 flex-shrink-0" />,
       gradient: "from-orange-500 to-red-500"
     },
     {
-      label: "Profile",
+      label: "Profile & CV Upload",
       href: "/profile",
       icon: <User className="text-primary h-5 w-5 flex-shrink-0" />,
       gradient: "from-pink-500 to-purple-500"
     },
     {
-      label: "Analytics",
+      label: "CV Analytics",
       href: "/analytics",
       icon: <BarChart3 className="text-primary h-5 w-5 flex-shrink-0" />,
       gradient: "from-blue-500 to-indigo-500"
     },
     {
-      label: "Questionnaire",
+      label: "Profile Setup",
       href: "/questionnaire",
       icon: <FileText className="text-primary h-5 w-5 flex-shrink-0" />,
       gradient: "from-indigo-500 to-purple-500"
@@ -79,7 +90,7 @@ export function MainLayout() {
   ];
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-slate-50 via-purple-50/20 to-blue-50/30 dark:from-black dark:via-purple-900/5 dark:to-blue-900/10">
+    <div className="min-h-screen flex bg-gradient-to-br from-slate-50 via-purple-50/20 to-blue-50/30 dark:from-gray-900 dark:via-purple-900/5 dark:to-blue-900/10">
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen}>
         <SidebarBody className="justify-between gap-10">
           <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
@@ -132,21 +143,53 @@ export function MainLayout() {
               )}
             </div>
           </div>
+          
+          {/* User Profile Section */}
           {isAuthenticated && user && (
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg"></div>
-              <div className="relative">
-                <SidebarLink
-                  link={{
-                    label: user.name || "User",
-                    href: "/profile",
-                    icon: (
-                      <div className="h-7 w-7 flex-shrink-0 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs font-medium shadow-md">
-                        {(user.name || user.email || "U").charAt(0).toUpperCase()}
+            <div className="border-t border-border pt-4">
+              <div className="relative p-3 rounded-lg bg-gradient-to-r from-purple-500/5 to-blue-500/5 border border-purple-200/20 dark:border-purple-700/20">
+                <div className="flex items-center space-x-3">
+                  <div className="h-10 w-10 flex-shrink-0 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center text-white text-sm font-medium shadow-md">
+                    {user.photoURL ? (
+                      <img 
+                        src={user.photoURL} 
+                        alt={user.name || "User"} 
+                        className="h-10 w-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      (user.name || user.email || "U").charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-primary truncate">
+                      {user.name || "User"}
+                    </p>
+                    <p className="text-xs text-secondary truncate">
+                      {user.email}
+                    </p>
+                    {user.profile?.profileComplete && (
+                      <div className="flex items-center mt-1">
+                        <div className="w-2 h-2 bg-green-400 rounded-full mr-1"></div>
+                        <span className="text-xs text-green-600 dark:text-green-400">Profile Complete</span>
                       </div>
-                    ),
-                  }}
-                />
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => navigate("/profile")}
+                    className="flex-1 text-xs text-center py-1.5 px-2 rounded bg-white/50 dark:bg-gray-800/50 hover:bg-white/70 dark:hover:bg-gray-800/70 transition-colors text-secondary hover:text-primary flex items-center justify-center gap-1"
+                  >
+                    <Settings className="w-3 h-3" />
+                    Edit Profile
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="text-xs py-1.5 px-2 rounded bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-red-600 dark:text-red-400 flex items-center justify-center"
+                  >
+                    <LogOut className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -154,10 +197,10 @@ export function MainLayout() {
       </Sidebar>
 
       <div className="flex-1 flex flex-col">
-        {/* Mobile menu button - only visible on mobile */}
-        <div className="md:hidden flex items-center justify-between p-4 border-b border-border bg-gradient-to-r from-white/80 to-purple-50/50 dark:from-black/80 dark:to-purple-900/10 backdrop-blur-md">
+        {/* Mobile Header */}
+        <div className="md:hidden flex items-center justify-between p-4 border-b border-border bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
           <button
-            className="p-2 rounded-md hover:bg-gradient-to-r hover:from-purple-100 hover:to-blue-100 dark:hover:from-purple-900/20 dark:hover:to-blue-900/20 transition-colors duration-200"
+            className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
             onClick={() => setSidebarOpen(!sidebarOpen)}
             aria-label="Toggle menu"
           >
@@ -177,15 +220,15 @@ export function MainLayout() {
               )}
             </svg>
           </button>
-          <div className="text-sm font-medium gradient-text">
+          <div className="text-sm font-medium text-primary">
             {getPageTitle()}
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
             {isAuthenticated ? (
               <button
-                onClick={logout}
-                className="rounded-md border border-border px-2 py-1 text-xs text-secondary hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900/10 dark:hover:to-pink-900/10 hover:text-primary transition-colors duration-200"
+                onClick={handleLogout}
+                className="rounded-md border border-border px-2 py-1 text-xs text-secondary hover:bg-red-50 dark:hover:bg-red-900/10 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200"
               >
                 Logout
               </button>
@@ -195,14 +238,14 @@ export function MainLayout() {
                   size="sm"
                   variant="outline"
                   onClick={() => navigate("/login")}
-                  className="hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 dark:hover:from-purple-900/10 dark:hover:to-blue-900/10"
+                  className="hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
                   Login
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => navigate("/register")}
-                  className="btn-gradient"
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
                 >
                   Register
                 </Button>
@@ -210,6 +253,19 @@ export function MainLayout() {
             )}
           </div>
         </div>
+
+        {/* Desktop Header with Theme Toggle */}
+        <div className="hidden md:flex items-center justify-end p-4 border-b border-border bg-white/50 dark:bg-gray-900/50 backdrop-blur-md">
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            {isAuthenticated && (
+              <div className="flex items-center gap-2 text-sm text-secondary">
+                <span>Welcome back, {user?.name || "User"}!</span>
+              </div>
+            )}
+          </div>
+        </div>
+
         <main className="flex-1 p-4 md:p-6 overflow-y-auto">
           <Outlet />
         </main>

@@ -50,37 +50,37 @@ export interface CVInfo {
 
 export const profileService = {
   async getProfile(): Promise<UserProfile> {
-    const response = await httpClient.get<UserProfile>("/users/me");
+    const response = await httpClient.get<UserProfile>("/api/v1/users/me");
     return response.data;
   },
 
   async updateProfile(data: Partial<UserProfile>): Promise<UserProfile> {
-    const response = await httpClient.put<UserProfile>("/users/me", data);
+    const response = await httpClient.put<UserProfile>("/api/v1/users/me", data);
     return response.data;
   },
 
   async getSkills(): Promise<SkillsResponse> {
-    const response = await httpClient.get<SkillsResponse>("/users/me/skills");
+    const response = await httpClient.get<SkillsResponse>("/api/v1/users/me/skills");
     return response.data;
   },
 
   async updateSkills(skills: Array<{ name: string; level: string }>): Promise<SkillsResponse> {
-    const response = await httpClient.post<SkillsResponse>("/users/me/skills", { skills });
+    const response = await httpClient.post<SkillsResponse>("/api/v1/users/me/skills", { skills });
     return response.data;
   },
 
   async getQuestionnaire(): Promise<Questionnaire> {
-    const response = await httpClient.get<Questionnaire>("/users/me/questionnaire");
+    const response = await httpClient.get<Questionnaire>("/api/v1/users/me/questionnaire");
     return response.data;
   },
 
   async updateQuestionnaire(data: Partial<Questionnaire>): Promise<{ questionnaire_id: string; updated_at: string }> {
-    const response = await httpClient.post("/users/me/questionnaire", data);
+    const response = await httpClient.post("/api/v1/users/me/questionnaire", data);
     return response.data;
   },
 
   async getCV(): Promise<CVInfo> {
-    const response = await httpClient.get<CVInfo>("/users/me/cv");
+    const response = await httpClient.get<CVInfo>("/api/v1/users/me/cv");
     return response.data;
   },
 
@@ -89,7 +89,7 @@ export const profileService = {
     formData.append("file", file);
     formData.append("analysis_type", analysisType);
     
-    const response = await httpClient.post<CVInfo>("/users/me/cv/upload", formData, {
+    const response = await httpClient.post<CVInfo>("/api/v1/users/me/cv/upload", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -98,7 +98,7 @@ export const profileService = {
   },
 
   async deleteCV(): Promise<void> {
-    await httpClient.delete("/users/me/cv");
+    await httpClient.delete("/api/v1/users/me/cv");
   },
 };
 
