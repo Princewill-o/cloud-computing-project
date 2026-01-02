@@ -1,0 +1,16 @@
+{
+  "name": "ingestion-service",
+  "version": "1.0.0",
+  "description": "JSearch ingestion microservice for Google Cloud",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@google-cloud/bigquery": "^7.8.0",
+    "@google-cloud/storage": "^7.10.1",
+    "axios": "^1.6.8",
+    "express": "^4.19.2"
+  }
+}
