@@ -47,7 +47,7 @@ export interface JobMarketResponse {
 
 export const analyticsService = {
   async getUserProgress(): Promise<UserProgress> {
-    const response = await httpClient.get<UserProgress>("/analytics/user-progress");
+    const response = await httpClient.get<UserProgress>("/api/v1/analytics/user-progress");
     return response.data;
   },
 
@@ -57,13 +57,13 @@ export const analyticsService = {
     if (timeframe) queryParams.append("timeframe", timeframe);
     
     const response = await httpClient.get<MarketTrendsResponse>(
-      `/analytics/market-trends?${queryParams.toString()}`
+      `/api/v1/analytics/market-trends?${queryParams.toString()}`
     );
     return response.data;
   },
 
   async getJobMarket(): Promise<JobMarketResponse> {
-    const response = await httpClient.get<JobMarketResponse>("/analytics/job-market");
+    const response = await httpClient.get<JobMarketResponse>("/api/v1/analytics/job-market");
     return response.data;
   },
 };

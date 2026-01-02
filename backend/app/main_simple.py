@@ -1,5 +1,5 @@
 """
-Simplified FastAPI main application for demo
+Simplified FastAPI main application for demo with AI-powered CV analysis
 """
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 import uvicorn
 import os
+from dotenv import load_dotenv
 import time
 from datetime import datetime
 import json
@@ -15,6 +16,11 @@ import aiohttp
 import asyncio
 import ssl
 from typing import Dict, Any
+import uuid
+import io
+
+# Load environment variables
+load_dotenv()
 
 # Create FastAPI app
 app = FastAPI(
@@ -38,6 +44,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# DeepSeek AI Integration
+DEEPSEEK_TOKEN = os.getenv("DEEPSEEK_TOKEN", "your-deepseek-token-here")
+DEEPSEEK_ENDPOINT = "https://models.github.ai/inference"
+DEEPSEEK_MODEL = "deepseek/DeepSeek-V3-0324"
+
+# In-memory storage for CV data (in production, use a database)
+cv_storage = {}
+user_cv_analyses = {}
 
 # Pydantic models
 class UserCreate(BaseModel):
@@ -95,6 +110,279 @@ async def make_api_request(url: str, timeout: int = 10):
     except Exception as e:
         print(f"API request error for {url}: {e}")
         return None
+
+# AI Analysis Functions - Focused on CV Paraphrasing
+async def analyze_cv_for_paraphrasing(cv_text: str, user_profile: dict) -> Dict[str, Any]:
+    """Analyze CV content to prepare it for paraphrasing and job application optimization"""
+    system_prompt = """
+    You are an expert CV analyzer specializing in preparing CVs for paraphrasing and job application optimization.
+    Your task is to analyze the CV structure and content to identify areas that can be effectively paraphrased for different job applications.
+    
+    Focus on:
+    1. Identifying key CV sections (summary, experience, skills, education, achievements)
+    2. Extracting transferable skills and experiences
+    3. Identifying optimization opportunities for different job types
+    4. Assessing the paraphrasing potential of each section
+    5. Providing a paraphrasing readiness score
+    """
+    
+    user_prompt = f"""
+    Analyze this CV for paraphrasing and job application optimization:
+    
+    CV CONTENT:
+    {cv_text}
+    
+    USER PROFILE:
+    {user_profile}
+    
+    Provide analysis in this JSON format:
+    {{
+        "cv_sections": {{
+            "professional_summary": "extracted summary text",
+            "work_experience": [
+                {{
+                    "company": "Company Name",
+                    "position": "Job Title",
+                    "duration": "Date Range",
+                    "description": "Original description",
+                    "transferable_skills": ["skill1", "skill2"],
+                    "paraphrasing_potential": 0.85
+                }}
+            ],
+            "skills": {{
+                "technical": ["skill1", "skill2"],
+                "soft": ["skill1", "skill2"],
+                "industry_specific": ["skill1", "skill2"]
+            }},
+            "education": "education details",
+            "achievements": ["achievement1", "achievement2"]
+        }},
+        "optimization_areas": [
+            {{
+                "section": "professional_summary",
+                "current_focus": "general description",
+                "optimization_potential": "can be tailored for specific industries",
+                "paraphrasing_score": 0.9
+            }}
+        ],
+        "transferable_experiences": [
+            {{
+                "experience": "project management",
+                "applicable_roles": ["Product Manager", "Team Lead", "Project Coordinator"],
+                "paraphrasing_variations": ["managed cross-functional teams", "coordinated project deliverables", "led strategic initiatives"]
+            }}
+        ],
+        "paraphrasing_score": 0.85,
+        "readiness_assessment": {{
+            "structure_quality": 0.8,
+            "content_depth": 0.9,
+            "keyword_optimization_potential": 0.7,
+            "overall_paraphrasing_readiness": 0.8
+        }},
+        "recommended_job_types": ["Software Engineer", "Full Stack Developer", "Frontend Developer"],
+        "paraphrasing_strategy": {{
+            "high_impact_sections": ["professional_summary", "work_experience"],
+            "keyword_opportunities": ["technical skills", "industry buzzwords"],
+            "customization_areas": ["role-specific achievements", "company-specific language"]
+        }}
+    }}
+    """
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            headers = {
+                "Authorization": f"Bearer {DEEPSEEK_TOKEN}",
+                "Content-Type": "application/json"
+            }
+            
+            payload = {
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "temperature": 0.2,
+                "top_p": 0.8,
+                "max_tokens": 4000,
+                "model": DEEPSEEK_MODEL
+            }
+            
+            async with session.post(
+                f"{DEEPSEEK_ENDPOINT}/chat/completions",
+                headers=headers,
+                json=payload
+            ) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    content = result["choices"][0]["message"]["content"]
+                    
+                    try:
+                        # Extract JSON from response
+                        if "```json" in content:
+                            json_start = content.find("```json") + 7
+                            json_end = content.find("```", json_start)
+                            content = content[json_start:json_end].strip()
+                        elif "```" in content:
+                            json_start = content.find("```") + 3
+                            json_end = content.find("```", json_start)
+                            content = content[json_start:json_end].strip()
+                        
+                        analysis = json.loads(content)
+                        analysis["analysis_timestamp"] = datetime.utcnow().isoformat()
+                        analysis["analysis_type"] = "paraphrasing_focused"
+                        return analysis
+                    except json.JSONDecodeError:
+                        return {
+                            "raw_analysis": content,
+                            "analysis_timestamp": datetime.utcnow().isoformat(),
+                            "analysis_type": "paraphrasing_focused",
+                            "error": "Failed to parse structured analysis"
+                        }
+                else:
+                    error_text = await response.text()
+                    raise Exception(f"DeepSeek API error: {response.status} - {error_text}")
+                    
+    except Exception as e:
+        print(f"Error in CV paraphrasing analysis: {str(e)}")
+        return {
+            "error": str(e),
+            "analysis_timestamp": datetime.utcnow().isoformat(),
+            "analysis_type": "paraphrasing_focused"
+        }
+
+async def paraphrase_cv_for_job(cv_text: str, job_title: str, job_description: str = None) -> Dict[str, Any]:
+    """Paraphrase CV content for a specific job using DeepSeek AI"""
+    system_prompt = """
+    You are an expert CV writer specializing in tailoring CVs for specific job applications.
+    Your task is to paraphrase and optimize CV content to better align with the target job while maintaining truthfulness.
+    
+    Guidelines:
+    1. Keep all factual information accurate - do not fabricate experience or skills
+    2. Reword descriptions to highlight relevant experience for the target role
+    3. Emphasize transferable skills that match the job requirements
+    4. Use industry-specific keywords and terminology
+    5. Restructure bullet points to lead with the most relevant achievements
+    6. Maintain professional tone and formatting
+    7. Do not add skills or experience that don't exist in the original CV
+    """
+    
+    user_prompt = f"""
+    Please paraphrase this CV to better align with the target job position:
+    
+    TARGET JOB TITLE: {job_title}
+    
+    JOB DESCRIPTION: {job_description if job_description else "No specific job description provided"}
+    
+    ORIGINAL CV:
+    {cv_text}
+    
+    Provide the paraphrased CV in this JSON format:
+    {{
+        "paraphrased_cv": {{
+            "professional_summary": "Rewritten professional summary emphasizing relevant skills",
+            "work_experience": [
+                {{
+                    "company": "Company Name",
+                    "position": "Job Title",
+                    "duration": "Date Range",
+                    "description": "Rewritten job description highlighting relevant achievements"
+                }}
+            ],
+            "skills": ["List of skills emphasized for this role"],
+            "education": "Education section if relevant changes needed",
+            "key_achievements": ["Rewritten achievements that align with target role"]
+        }},
+        "optimization_notes": {{
+            "keywords_added": ["Industry keywords incorporated"],
+            "skills_emphasized": ["Skills highlighted for this role"],
+            "experience_reframed": ["How experience was repositioned"],
+            "suggestions": ["Additional recommendations for the application"]
+        }},
+        "match_analysis": {{
+            "alignment_score": 0.85,
+            "strengths": ["Strong points for this role"],
+            "areas_to_highlight": ["Key areas to emphasize in cover letter"],
+            "missing_elements": ["Skills/experience gaps to address"]
+        }}
+    }}
+    """
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            headers = {
+                "Authorization": f"Bearer {DEEPSEEK_TOKEN}",
+                "Content-Type": "application/json"
+            }
+            
+            payload = {
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "temperature": 0.3,
+                "top_p": 0.9,
+                "max_tokens": 4000,
+                "model": DEEPSEEK_MODEL
+            }
+            
+            async with session.post(
+                f"{DEEPSEEK_ENDPOINT}/chat/completions",
+                headers=headers,
+                json=payload
+            ) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    content = result["choices"][0]["message"]["content"]
+                    
+                    try:
+                        # Extract JSON from response
+                        if "```json" in content:
+                            json_start = content.find("```json") + 7
+                            json_end = content.find("```", json_start)
+                            content = content[json_start:json_end].strip()
+                        elif "```" in content:
+                            json_start = content.find("```") + 3
+                            json_end = content.find("```", json_start)
+                            content = content[json_start:json_end].strip()
+                        
+                        paraphrasing = json.loads(content)
+                        paraphrasing["paraphrasing_timestamp"] = datetime.utcnow().isoformat()
+                        paraphrasing["target_job"] = job_title
+                        return paraphrasing
+                    except json.JSONDecodeError:
+                        return {
+                            "raw_paraphrasing": content,
+                            "paraphrasing_timestamp": datetime.utcnow().isoformat(),
+                            "target_job": job_title,
+                            "error": "Failed to parse structured paraphrasing"
+                        }
+                else:
+                    error_text = await response.text()
+                    raise Exception(f"DeepSeek API error: {response.status} - {error_text}")
+                    
+    except Exception as e:
+        print(f"Error in CV paraphrasing: {str(e)}")
+        return {
+            "error": str(e),
+            "paraphrasing_timestamp": datetime.utcnow().isoformat(),
+            "target_job": job_title
+        }
+
+def extract_text_from_file(file_content: bytes, filename: str) -> str:
+    """Extract text from uploaded file"""
+    file_extension = filename.split('.')[-1].lower()
+    
+    if file_extension == 'txt':
+        return file_content.decode('utf-8')
+    elif file_extension == 'pdf':
+        # For demo purposes, return a placeholder
+        # In production, use PyPDF2 or similar
+        return "PDF text extraction would be implemented here with PyPDF2"
+    elif file_extension in ['doc', 'docx']:
+        # For demo purposes, return a placeholder
+        # In production, use python-docx
+        return "DOCX text extraction would be implemented here with python-docx"
+    else:
+        raise ValueError(f"Unsupported file format: {file_extension}")
 
 # External API Configuration
 ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID", "demo")
@@ -335,65 +623,164 @@ async def login(user_data: UserLogin):
     )
 
 # CV endpoints
-@app.post("/api/v1/users/me/cv/upload", response_model=CVUploadResponse)
+@app.post("/api/v1/users/me/cv/upload")
 async def upload_cv(
     file: UploadFile = File(...),
-    analysis_type: str = Form("full")
+    analysis_type: str = Form("paraphrasing")
 ):
-    """Upload CV file for analysis"""
+    """Upload CV file for AI-powered paraphrasing and job application optimization"""
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
     
     # Check file type
-    if not file.filename.lower().endswith(('.pdf', '.docx')):
-        raise HTTPException(status_code=400, detail="Only PDF and DOCX files are supported")
+    allowed_extensions = ['.pdf', '.docx', '.doc', '.txt']
+    if not any(file.filename.lower().endswith(ext) for ext in allowed_extensions):
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Unsupported file format. Allowed: {', '.join(allowed_extensions)}"
+        )
     
-    # Mock CV processing
-    cv_id = f"cv_{len(cvs_db) + 1}_{int(time.time())}"
-    
-    # Simulate processing
-    cvs_db[cv_id] = {
-        "cv_id": cv_id,
-        "filename": file.filename,
-        "analysis_status": "completed",
-        "uploaded_at": datetime.utcnow().isoformat(),
-        "extracted_data": {
-            "skills": ["Python", "React", "JavaScript", "Git"],
-            "experience_years": 2,
-            "experience": [
-                {
-                    "company": "Previous Company",
-                    "role": "Software Developer",
-                    "duration_years": 2
-                }
-            ],
-            "education": [
-                {
-                    "institution": "University",
-                    "degree": "Computer Science",
-                    "year": 2022
-                }
-            ]
+    try:
+        # Read file content
+        file_content = await file.read()
+        
+        # Extract text from file
+        try:
+            extracted_text = extract_text_from_file(file_content, file.filename)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        
+        if not extracted_text.strip():
+            raise HTTPException(status_code=400, detail="No text content could be extracted from the file")
+        
+        # Generate unique CV ID
+        cv_id = f"cv_{uuid.uuid4()}"
+        user_id = "demo_user_1"  # In production, get from authentication
+        
+        # Store CV data
+        cv_storage[cv_id] = {
+            "cv_id": cv_id,
+            "user_id": user_id,
+            "filename": file.filename,
+            "extracted_text": extracted_text,
+            "upload_timestamp": datetime.utcnow().isoformat(),
+            "analysis_status": "processing"
         }
-    }
-    
-    return CVUploadResponse(
-        cv_id=cv_id,
-        file_url=f"mock://storage/{cv_id}",
-        analysis_status="completed",
-        uploaded_at=datetime.utcnow().isoformat(),
-        message="CV analysis completed successfully!"
-    )
+        
+        # Perform AI analysis focused on paraphrasing capabilities
+        user_profile = {
+            "email": "demo@example.com",
+            "full_name": "Demo User"
+        }
+        
+        ai_analysis = await analyze_cv_for_paraphrasing(extracted_text, user_profile)
+        
+        # Update CV with analysis results
+        cv_storage[cv_id].update({
+            "analysis_status": "completed" if not ai_analysis.get("error") else "completed_with_warnings",
+            "ai_analysis": ai_analysis,
+            "analysis_timestamp": datetime.utcnow().isoformat()
+        })
+        
+        # Store user's CV analysis for other endpoints
+        user_cv_analyses[user_id] = {
+            "cv_id": cv_id,
+            "analysis": ai_analysis,
+            "upload_date": datetime.utcnow().isoformat()
+        }
+        
+        return {
+            "cv_id": cv_id,
+            "file_url": f"ai://analysis/{cv_id}",
+            "analysis_status": cv_storage[cv_id]["analysis_status"],
+            "uploaded_at": cv_storage[cv_id]["upload_timestamp"],
+            "message": "CV analyzed successfully for paraphrasing capabilities!" if not ai_analysis.get("error") else "CV processed with basic analysis",
+            "ai_powered": True,
+            "paraphrasing_ready": True,
+            "analysis_summary": {
+                "sections_identified": len(ai_analysis.get("cv_sections", {})),
+                "paraphrasing_potential": ai_analysis.get("paraphrasing_score", 0.0),
+                "optimization_areas": len(ai_analysis.get("optimization_areas", [])),
+                "has_error": bool(ai_analysis.get("error"))
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing CV: {str(e)}")
 
 @app.get("/api/v1/users/me/cv")
 async def get_cv_analysis():
     """Get CV analysis results"""
-    # Return the latest CV for demo
-    if not cvs_db:
-        raise HTTPException(status_code=404, detail="No CV found")
+    user_id = "demo_user_1"  # In production, get from authentication
     
-    latest_cv = list(cvs_db.values())[-1]
-    return latest_cv
+    if user_id not in user_cv_analyses:
+        raise HTTPException(status_code=404, detail="No CV found. Please upload your CV first.")
+    
+    cv_data = user_cv_analyses[user_id]
+    cv_id = cv_data["cv_id"]
+    
+    if cv_id not in cv_storage:
+        raise HTTPException(status_code=404, detail="CV data not found")
+    
+    cv_info = cv_storage[cv_id]
+    
+    return {
+        "cv_id": cv_id,
+        "filename": cv_info["filename"],
+        "analysis_status": cv_info["analysis_status"],
+        "uploaded_at": cv_info["upload_timestamp"],
+        "analysis_timestamp": cv_info.get("analysis_timestamp"),
+        "ai_analysis": cv_info.get("ai_analysis", {}),
+        "ai_powered": True
+    }
+
+@app.post("/api/v1/users/me/cv/paraphrase")
+async def paraphrase_cv_for_job_application(
+    job_title: str = Form(...),
+    job_description: str = Form(None),
+    company_name: str = Form(None)
+):
+    """Paraphrase CV for a specific job application using AI"""
+    user_id = "demo_user_1"  # In production, get from authentication
+    
+    if user_id not in user_cv_analyses:
+        raise HTTPException(status_code=404, detail="No CV found. Please upload your CV first.")
+    
+    cv_data = user_cv_analyses[user_id]
+    cv_id = cv_data["cv_id"]
+    
+    if cv_id not in cv_storage:
+        raise HTTPException(status_code=404, detail="CV data not found")
+    
+    cv_info = cv_storage[cv_id]
+    extracted_text = cv_info["extracted_text"]
+    
+    # Use the paraphrasing function
+    try:
+        paraphrasing_result = await paraphrase_cv_for_job(
+            cv_text=extracted_text,
+            job_title=job_title,
+            job_description=job_description or f"Position: {job_title} at {company_name or 'target company'}"
+        )
+        
+        paraphrasing_result["job_application_details"] = {
+            "target_job_title": job_title,
+            "target_company": company_name,
+            "job_description_provided": bool(job_description)
+        }
+        
+        return paraphrasing_result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error paraphrasing CV: {str(e)}")
+
+@app.post("/api/v1/users/me/cv/tailor")
+async def tailor_cv_for_job(job_description: str = Form(...)):
+    """Legacy endpoint - redirects to paraphrase endpoint"""
+    return await paraphrase_cv_for_job_application(
+        job_title="Software Developer",  # Default
+        job_description=job_description
+    )
 
 # Recommendations endpoints
 @app.get("/api/v1/recommendations/opportunities")
@@ -404,107 +791,240 @@ async def get_opportunities(
     include_external: bool = True,
     query: Optional[str] = None
 ):
-    """Get job/internship recommendations with optional external API integration"""
+    """Get job opportunities that would benefit from CV paraphrasing"""
+    user_id = "demo_user_1"  # In production, get from authentication
     
-    # Start with local opportunities
-    filtered_opportunities = opportunities_db.copy()
-    
-    # Filter by type if specified
-    if type:
-        filtered_opportunities = [opp for opp in filtered_opportunities if opp["type"] == type]
-    
-    # If external API integration is enabled and we have API keys
-    if include_external and ADZUNA_APP_ID != "demo":
-        try:
-            # Fetch from Adzuna API
-            search_query = query or "software developer"
-            adzuna_data = await fetch_adzuna_jobs(search_query, "us", min(10, limit))
-            
-            # Transform and add external jobs
-            for adzuna_job in adzuna_data.get("results", []):
-                transformed_job = transform_adzuna_job(adzuna_job)
-                filtered_opportunities.append(transformed_job)
-                
-        except Exception as e:
-            print(f"Error integrating external API: {e}")
-    
-    # Sort by match score (descending)
-    filtered_opportunities.sort(key=lambda x: x.get("match_score", 0), reverse=True)
-    
-    # Apply pagination
-    total = len(filtered_opportunities)
-    paginated = filtered_opportunities[offset:offset + limit]
-    
-    return {
-        "opportunities": paginated,
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-        "external_api_used": include_external and ADZUNA_APP_ID != "demo",
-        "recommendation_metadata": {
-            "generated_at": datetime.utcnow().isoformat(),
-            "model_version": "enhanced-v1.1",
-            "user_profile_completeness": 0.85,
-            "data_sources": ["internal", "adzuna"] if include_external else ["internal"]
+    # Check if user has uploaded and analyzed CV
+    if user_id not in user_cv_analyses:
+        return {
+            "opportunities": [],
+            "total": 0,
+            "limit": limit,
+            "offset": offset,
+            "external_api_used": False,
+            "message": "Upload your CV to get job opportunities and paraphrasing recommendations",
+            "requires_cv": True,
+            "paraphrasing_focus": True,
+            "recommendation_metadata": {
+                "generated_at": datetime.utcnow().isoformat(),
+                "model_version": "paraphrasing-focused-v1.0",
+                "user_profile_completeness": 0.0,
+                "data_sources": []
+            }
         }
-    }
+    
+    # Get CV analysis
+    cv_data = user_cv_analyses[user_id]
+    ai_analysis = cv_data["analysis"]
+    
+    if ai_analysis.get("error"):
+        return {
+            "opportunities": [],
+            "total": 0,
+            "limit": limit,
+            "offset": offset,
+            "external_api_used": False,
+            "message": "CV analysis failed. Upload a clearer CV for paraphrasing-focused job recommendations",
+            "requires_cv": True,
+            "paraphrasing_focus": True,
+            "recommendation_metadata": {
+                "generated_at": datetime.utcnow().isoformat(),
+                "model_version": "paraphrasing-focused-v1.0",
+                "user_profile_completeness": 0.3,
+                "data_sources": []
+            }
+        }
+    
+    # Generate paraphrasing-focused job recommendations
+    try:
+        # Get recommended job types from CV analysis
+        recommended_jobs = ai_analysis.get("recommended_job_types", ["Software Developer", "Full Stack Developer"])
+        cv_sections = ai_analysis.get("cv_sections", {})
+        
+        opportunities = []
+        for i, job_title in enumerate(recommended_jobs[:limit]):
+            # Calculate paraphrasing potential for this job type
+            paraphrasing_score = 0.8 + (i * 0.02)  # Slightly decrease for each subsequent job
+            
+            opportunity = {
+                "opportunity_id": f"paraphrase_job_{i+1}",
+                "type": "job",
+                "title": job_title,
+                "company": f"Various Companies",
+                "location": "Remote/Hybrid",
+                "match_score": paraphrasing_score,
+                "required_skills": cv_sections.get("skills", {}).get("technical", [])[:5],
+                "paraphrasing_potential": paraphrasing_score,
+                "application_url": f"https://linkedin.com/jobs/search/?keywords={job_title.replace(' ', '%20')}",
+                "posted_at": datetime.utcnow().isoformat(),
+                "description": f"Multiple {job_title} positions available. Your CV can be effectively paraphrased for these roles.",
+                "paraphrasing_benefits": [
+                    "Highlight relevant experience for this role",
+                    "Optimize keywords for ATS systems",
+                    "Emphasize transferable skills",
+                    "Tailor achievements to job requirements"
+                ],
+                "cv_optimization_areas": [
+                    "Professional summary customization",
+                    "Experience description enhancement",
+                    "Skills section optimization",
+                    "Achievement quantification"
+                ],
+                "estimated_paraphrasing_time": "15-30 minutes",
+                "success_rate_improvement": f"{int(paraphrasing_score * 40)}% higher response rate"
+            }
+            opportunities.append(opportunity)
+        
+        return {
+            "opportunities": opportunities,
+            "total": len(opportunities),
+            "limit": limit,
+            "offset": offset,
+            "external_api_used": False,
+            "paraphrasing_focus": True,
+            "message": f"Found {len(opportunities)} job types perfect for CV paraphrasing based on your profile",
+            "recommendation_metadata": {
+                "generated_at": datetime.utcnow().isoformat(),
+                "model_version": "paraphrasing-focused-v1.0",
+                "user_profile_completeness": ai_analysis.get("paraphrasing_score", 0.0),
+                "data_sources": ["cv_paraphrasing_analysis"],
+                "cv_analysis_date": cv_data["upload_date"],
+                "paraphrasing_readiness": ai_analysis.get("readiness_assessment", {}).get("overall_paraphrasing_readiness", 0.0)
+            }
+        }
+        
+    except Exception as e:
+        print(f"Error generating paraphrasing-focused recommendations: {str(e)}")
+        return {
+            "opportunities": [],
+            "total": 0,
+            "limit": limit,
+            "offset": offset,
+            "external_api_used": False,
+            "paraphrasing_focus": True,
+            "message": "Error generating paraphrasing recommendations. Please try again later.",
+            "error": str(e),
+            "recommendation_metadata": {
+                "generated_at": datetime.utcnow().isoformat(),
+                "model_version": "paraphrasing-focused-v1.0",
+                "user_profile_completeness": 0.0,
+                "data_sources": []
+            }
+        }
 
 @app.get("/api/v1/recommendations/skill-gaps")
 async def get_skill_gaps():
-    """Get skill gap analysis"""
-    return {
-        "skill_gaps": [
-            {
-                "skill": "Docker",
-                "importance": 0.9,
-                "frequency_in_jobs": 0.75,
-                "user_has_skill": False,
-                "recommended_courses": [
-                    {
-                        "course_id": "course_123",
-                        "title": "Docker Fundamentals",
-                        "provider": "Coursera",
-                        "url": "https://www.coursera.org/learn/docker-fundamentals",
-                        "duration": "4 weeks",
-                        "difficulty": "beginner",
-                        "rating": 4.5,
-                        "price": 49.99
-                    }
-                ],
-                "estimated_learning_time": "2-3 weeks",
-                "priority": "high"
+    """Get AI-powered skill gap analysis based on CV"""
+    user_id = "demo_user_1"  # In production, get from authentication
+    
+    # Check if user has uploaded and analyzed CV
+    if user_id not in user_cv_analyses:
+        return {
+            "skill_gaps": [],
+            "overall_readiness": 0.0,
+            "readiness_breakdown": {
+                "skill_coverage": 0.0,
+                "experience_match": 0.0,
+                "education_match": 0.0
             },
-            {
-                "skill": "TypeScript",
-                "importance": 0.8,
-                "frequency_in_jobs": 0.65,
-                "user_has_skill": False,
-                "recommended_courses": [
-                    {
-                        "course_id": "course_456",
-                        "title": "TypeScript Complete Guide",
-                        "provider": "Udemy",
-                        "url": "https://www.udemy.com/typescript-complete",
-                        "duration": "6 weeks",
-                        "difficulty": "intermediate",
-                        "rating": 4.7,
-                        "price": 79.99
-                    }
-                ],
-                "estimated_learning_time": "3-4 weeks",
-                "priority": "medium"
-            }
-        ],
-        "overall_readiness": 0.75,
+            "target_role": "Unknown",
+            "total_gaps": 0,
+            "critical_gaps": 0,
+            "message": "Upload your CV to get personalized skill gap analysis",
+            "requires_cv": True,
+            "analysis_date": datetime.utcnow().isoformat()
+        }
+    
+    # Get CV analysis
+    cv_data = user_cv_analyses[user_id]
+    ai_analysis = cv_data["analysis"]
+    
+    if ai_analysis.get("error"):
+        return {
+            "skill_gaps": [],
+            "overall_readiness": 0.3,
+            "readiness_breakdown": {
+                "skill_coverage": 0.2,
+                "experience_match": 0.3,
+                "education_match": 0.4
+            },
+            "target_role": "Unknown",
+            "total_gaps": 0,
+            "critical_gaps": 0,
+            "message": "CV analysis failed. Upload a clearer CV for skill gap analysis",
+            "requires_cv": True,
+            "analysis_date": cv_data["upload_date"]
+        }
+    
+    # Extract skill gaps from AI analysis
+    skill_gaps_data = ai_analysis.get("skill_gaps", {})
+    next_level_gaps = skill_gaps_data.get("for_next_level", [])
+    target_role_gaps = skill_gaps_data.get("for_target_roles", [])
+    
+    # Combine and deduplicate gaps
+    all_gaps = list(set(next_level_gaps + target_role_gaps))
+    
+    # Create skill gap objects
+    skill_gaps = []
+    for i, skill in enumerate(all_gaps[:10]):  # Limit to top 10 gaps
+        importance = 0.9 if skill in next_level_gaps else 0.7
+        priority = "high" if importance > 0.8 else "medium"
+        
+        skill_gap = {
+            "skill": skill,
+            "importance": importance,
+            "frequency_in_jobs": 0.6 + (importance * 0.3),  # Estimate based on importance
+            "user_has_skill": False,
+            "recommended_courses": [
+                {
+                    "course_id": f"course_{i+1}",
+                    "title": f"{skill} Fundamentals",
+                    "provider": "Coursera" if i % 2 == 0 else "Udemy",
+                    "url": f"https://www.coursera.org/learn/{skill.lower().replace(' ', '-')}",
+                    "duration": "4-6 weeks",
+                    "difficulty": "beginner" if importance < 0.8 else "intermediate",
+                    "rating": 4.5,
+                    "price": 49.99 if i % 2 == 0 else 79.99
+                }
+            ],
+            "estimated_learning_time": "2-4 weeks",
+            "priority": priority
+        }
+        skill_gaps.append(skill_gap)
+    
+    # Calculate readiness metrics
+    readiness_score = ai_analysis.get("readiness_score", 0.0)
+    skills = ai_analysis.get("skills", {})
+    experience = ai_analysis.get("experience", {})
+    
+    technical_skills = len(skills.get("technical", []))
+    skill_coverage = min(1.0, technical_skills / 15)  # Normalize to 15 skills
+    
+    experience_years = experience.get("years", 0)
+    experience_match = min(1.0, experience_years / 5)  # Normalize to 5 years
+    
+    education_match = 0.8 if ai_analysis.get("education", {}).get("degrees") else 0.4
+    
+    # Determine target role from career paths
+    career_paths = ai_analysis.get("career_paths", [])
+    target_role = career_paths[0] if career_paths else experience.get("roles", ["Software Developer"])[0] if experience.get("roles") else "Software Developer"
+    
+    return {
+        "skill_gaps": skill_gaps,
+        "overall_readiness": readiness_score,
         "readiness_breakdown": {
-            "skill_coverage": 0.70,
-            "experience_match": 0.80,
-            "education_match": 0.90
+            "skill_coverage": skill_coverage,
+            "experience_match": experience_match,
+            "education_match": education_match
         },
-        "target_role": "Software Engineer",
-        "total_gaps": 2,
-        "critical_gaps": 1,
-        "analysis_date": datetime.utcnow().isoformat()
+        "target_role": target_role,
+        "total_gaps": len(skill_gaps),
+        "critical_gaps": len([gap for gap in skill_gaps if gap["priority"] == "high"]),
+        "ai_powered": True,
+        "message": f"Found {len(skill_gaps)} skill gaps based on AI analysis of your CV",
+        "analysis_date": cv_data["upload_date"],
+        "improvement_areas": ai_analysis.get("improvement_areas", []),
+        "strengths": ai_analysis.get("strengths", [])
     }
 
 # User endpoints
@@ -564,17 +1084,86 @@ async def get_user_skills():
 # Analytics endpoints
 @app.get("/api/v1/analytics/user-progress")
 async def get_user_progress():
-    """Get user's career readiness and progress metrics"""
-    return {
-        "overall_readiness_score": 0.75,
-        "skill_coverage": 0.70,
-        "profile_completeness": 0.90,
-        "applications_sent": 5,
-        "interviews_scheduled": 2,
-        "skill_growth": {
-            "last_30_days": 0.15,
-            "last_90_days": 0.35
+    """Get user's career readiness and progress metrics - only real data from CV analysis"""
+    user_id = "demo_user_1"  # In production, get from authentication
+    
+    # Check if user has uploaded and analyzed CV
+    if user_id not in user_cv_analyses:
+        return {
+            "overall_readiness_score": 0.0,
+            "skill_coverage": 0.0,
+            "profile_completeness": 0.0,
+            "applications_sent": 0,
+            "interviews_scheduled": 0,
+            "skill_growth": {
+                "last_30_days": 0.0,
+                "last_90_days": 0.0
+            },
+            "has_cv": False,
+            "message": "Upload your CV to get personalized career readiness insights",
+            "requires_cv": True
         }
+    
+    # Get CV analysis
+    cv_data = user_cv_analyses[user_id]
+    ai_analysis = cv_data["analysis"]
+    
+    if ai_analysis.get("error"):
+        return {
+            "overall_readiness_score": 0.3,
+            "skill_coverage": 0.2,
+            "profile_completeness": 0.5,
+            "applications_sent": 0,
+            "interviews_scheduled": 0,
+            "skill_growth": {
+                "last_30_days": 0.0,
+                "last_90_days": 0.0
+            },
+            "has_cv": True,
+            "message": "CV processed with basic analysis. Upload a clearer CV for AI-powered insights.",
+            "analysis_date": cv_data["upload_date"]
+        }
+    
+    # Extract metrics from AI analysis
+    readiness_score = ai_analysis.get("readiness_score", 0.0)
+    skills = ai_analysis.get("skills", {})
+    experience = ai_analysis.get("experience", {})
+    
+    # Calculate skill coverage
+    technical_skills = len(skills.get("technical", []))
+    soft_skills = len(skills.get("soft", []))
+    skill_coverage = min(1.0, (technical_skills + soft_skills) / 20)
+    
+    # Calculate profile completeness
+    completeness_factors = []
+    if experience.get("years", 0) > 0:
+        completeness_factors.append(0.3)
+    if ai_analysis.get("education", {}).get("degrees"):
+        completeness_factors.append(0.2)
+    if technical_skills > 0:
+        completeness_factors.append(0.3)
+    if ai_analysis.get("strengths"):
+        completeness_factors.append(0.2)
+    
+    profile_completeness = sum(completeness_factors)
+    
+    return {
+        "overall_readiness_score": readiness_score,
+        "skill_coverage": skill_coverage,
+        "profile_completeness": profile_completeness,
+        "applications_sent": 0,  # Would come from user activity tracking
+        "interviews_scheduled": 0,  # Would come from user activity tracking
+        "skill_growth": {
+            "last_30_days": 0.0,  # Would come from skill tracking over time
+            "last_90_days": 0.0
+        },
+        "has_cv": True,
+        "analysis_date": cv_data["upload_date"],
+        "experience_level": experience.get("level", "unknown"),
+        "top_skills": skills.get("technical", [])[:5],
+        "recommended_improvements": ai_analysis.get("improvement_areas", []),
+        "career_paths": ai_analysis.get("career_paths", [])[:3],
+        "ai_powered": True
     }
 
 @app.get("/api/v1/analytics/market-trends")

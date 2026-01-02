@@ -90,7 +90,7 @@ export function RegisterPage() {
 
     try {
       await register(formData.email, formData.password, formData.full_name);
-      navigate("/questionnaire", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (err: any) {
       console.error("Registration error:", err);
       setError(getErrorMessage(err));
@@ -105,7 +105,7 @@ export function RegisterPage() {
 
     try {
       await loginWithGoogle();
-      navigate("/questionnaire", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (err: any) {
       console.error("Google sign-up error:", err);
       setError(getErrorMessage(err));
@@ -120,7 +120,7 @@ export function RegisterPage() {
 
     try {
       await loginWithGitHub();
-      navigate("/questionnaire", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (err: any) {
       console.error("GitHub sign-up error:", err);
       setError(getErrorMessage(err));

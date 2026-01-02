@@ -38,6 +38,17 @@ frontend/*.log
 frontend/coverage/
 frontend/.cache/
 
+# Backend
+backend/.env
+backend/.env.local
+backend/.env.production
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.pyc
+backend/**/*.pyc
+backend/venv/
+backend/.venv/
+
 # Root node_modules
 node_modules/
 package-lock.json

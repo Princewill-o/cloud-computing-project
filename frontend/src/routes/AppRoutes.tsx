@@ -3,6 +3,7 @@ import { MainLayout } from "../layouts/MainLayout";
 import { AuthLayout } from "../layouts/AuthLayout";
 import { LoginPage } from "../features/auth/pages/LoginPage";
 import { RegisterPage } from "../features/auth/pages/RegisterPage";
+import { AdminLoginPage } from "../features/auth/pages/AdminLoginPage";
 import { DashboardPage } from "../features/dashboard/pages/DashboardPage";
 import { InjectionPage } from "../features/dashboard/pages/InjectionPage";
 import { ProfileOverviewPage } from "../features/profile/pages/ProfileOverviewPage";
@@ -14,6 +15,9 @@ import { ProtectedRoute } from "../shared/components/auth/ProtectedRoute";
 export function AppRoutes() {
   return (
     <Routes>
+      {/* Admin login - standalone page */}
+      <Route path="/admin" element={<AdminLoginPage />} />
+
       {/* Auth pages - public access */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
