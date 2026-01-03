@@ -15,7 +15,7 @@ from contextlib import asynccontextmanager
 
 from app.config import settings
 from app.database import engine, Base
-from app.api.v1 import auth, users, cv, recommendations, analytics, opportunities, websocket
+from app.api.v1 import auth, users, cv, recommendations, analytics, opportunities, websocket, jobs
 from app.services.monitoring_service import MonitoringService
 from app.services.cache_service import CacheService
 from app.services.pubsub_service import PubSubService, BackgroundTaskProcessor
@@ -275,6 +275,7 @@ app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(cv.router, prefix="/api/v1/users/me/cv", tags=["CV Processing"])
 app.include_router(recommendations.router, prefix="/api/v1/recommendations", tags=["Recommendations"])
 app.include_router(opportunities.router, prefix="/api/v1/opportunities", tags=["Opportunities"])
+app.include_router(jobs.router, prefix="/api/v1/jobs", tags=["Jobs"])
 app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["Analytics"])
 app.include_router(websocket.router, prefix="/api/v1/ws", tags=["WebSocket"])
 

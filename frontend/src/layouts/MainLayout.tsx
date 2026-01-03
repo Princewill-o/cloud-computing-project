@@ -34,6 +34,7 @@ export function MainLayout() {
     if (location.pathname === "/injection") return "Data Injection";
     if (location.pathname === "/profile") return "Profile & CV Upload";
     if (location.pathname === "/opportunities") return "Career Opportunities";
+    if (location.pathname === "/jobs") return "Job Search";
     if (location.pathname === "/analytics") return "Career Analytics";
     if (location.pathname === "/questionnaire") return "Profile Setup";
     if (location.pathname === "/login") return "Login";
@@ -57,6 +58,12 @@ export function MainLayout() {
       href: "/dashboard",
       icon: <LayoutDashboard className="text-primary h-5 w-5 flex-shrink-0" />,
       gradient: "from-purple-500 to-blue-500"
+    },
+    {
+      label: "Job Search",
+      href: "/jobs",
+      icon: <Briefcase className="text-primary h-5 w-5 flex-shrink-0" />,
+      gradient: "from-blue-500 to-indigo-500"
     },
     {
       label: "Data Injection",

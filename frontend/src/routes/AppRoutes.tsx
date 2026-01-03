@@ -10,6 +10,7 @@ import { ProfileOverviewPage } from "../features/profile/pages/ProfileOverviewPa
 import { QuestionnairePage } from "../features/profile/pages/QuestionnairePage";
 import { OpportunitiesListPage } from "../features/opportunities/pages/OpportunitiesListPage";
 import { AnalyticsDashboardPage } from "../features/analytics/pages/AnalyticsDashboardPage";
+import { JobSearchPage } from "../features/jobs/pages/JobSearchPage";
 import { ProtectedRoute } from "../shared/components/auth/ProtectedRoute";
 
 export function AppRoutes() {
@@ -54,6 +55,11 @@ export function AppRoutes() {
         <Route path="opportunities" element={
           <ProtectedRoute>
             <OpportunitiesListPage />
+          </ProtectedRoute>
+        } />
+        <Route path="jobs" element={
+          <ProtectedRoute>
+            <JobSearchPage />
           </ProtectedRoute>
         } />
         <Route path="analytics" element={
