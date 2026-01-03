@@ -21,6 +21,7 @@ import {
   LogOut
 } from "lucide-react";
 import { useState } from "react";
+import logoImage from "../assets/ai-career-guide-logo.png";
 
 export function MainLayout() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -222,12 +223,9 @@ export function MainLayout() {
               </svg>
             </button>
             <img 
-              src="/assets/ai-career-guide-logo.png" 
+              src={logoImage} 
               alt="AI Career Guide" 
               className="w-8 h-8 object-contain"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
             />
           </div>
           <div className="flex flex-col items-center">
@@ -279,12 +277,9 @@ export function MainLayout() {
         <div className="hidden md:flex items-center justify-between p-4 border-b border-border bg-white/50 dark:bg-gray-900/50 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <img 
-              src="/assets/ai-career-guide-logo.png" 
+              src={logoImage} 
               alt="AI Career Guide" 
               className="w-8 h-8 object-contain"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
             />
             <span className="font-semibold text-primary bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
               AI Career Guide

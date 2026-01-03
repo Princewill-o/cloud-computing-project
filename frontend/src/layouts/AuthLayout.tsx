@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from "react-router-dom";
 import { ThemeToggle } from "../shared/components/ui/ThemeToggle";
+import logoImage from "../assets/ai-career-guide-logo.png";
 
 export function AuthLayout() {
   const location = useLocation();
@@ -30,21 +31,10 @@ export function AuthLayout() {
             <div className="text-center mb-8">
               <div className="w-20 h-20 mx-auto mb-4 flex items-center justify-center">
                 <img 
-                  src="/assets/ai-career-guide-logo.png" 
+                  src={logoImage} 
                   alt="AI Career Guide" 
                   className="w-20 h-20 object-contain"
-                  onError={(e) => {
-                    // Fallback to icon if image fails to load
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling.style.display = 'flex';
-                  }}
                 />
-                {/* Fallback logo */}
-                <div className="hidden w-16 h-16 bg-white/20 rounded-full items-center justify-center">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
               </div>
               <h1 className="text-3xl font-bold mb-4 text-white">
                 AI Career Guide

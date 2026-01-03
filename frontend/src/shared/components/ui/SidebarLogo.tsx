@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useSidebar } from "./sidebar";
+import logoImage from "../../../assets/ai-career-guide-logo.png";
 
 export const SidebarLogo = () => {
   const { open, animate } = useSidebar();
@@ -12,19 +13,10 @@ export const SidebarLogo = () => {
     >
       <div className="relative flex items-center justify-center h-10 w-10 flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
         <img 
-          src="/assets/ai-career-guide-logo.png" 
+          src={logoImage} 
           alt="AI Career Guide" 
           className="h-10 w-10 object-contain"
-          onError={(e) => {
-            // Fallback to text logo if image fails to load
-            e.currentTarget.style.display = 'none';
-            e.currentTarget.nextElementSibling.style.display = 'flex';
-          }}
         />
-        {/* Fallback logo */}
-        <div className="hidden items-center justify-center h-10 w-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg text-white font-bold text-lg">
-          AI
-        </div>
       </div>
       <motion.span
         animate={{
@@ -47,19 +39,10 @@ export const SidebarLogoIcon = () => {
     >
       <div className="relative flex items-center justify-center h-10 w-10 flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
         <img 
-          src="/assets/ai-career-guide-logo.png" 
+          src={logoImage} 
           alt="AI Career Guide" 
           className="h-10 w-10 object-contain"
-          onError={(e) => {
-            // Fallback to text logo if image fails to load
-            e.currentTarget.style.display = 'none';
-            e.currentTarget.nextElementSibling.style.display = 'flex';
-          }}
         />
-        {/* Fallback logo */}
-        <div className="hidden items-center justify-center h-10 w-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg text-white font-bold text-lg">
-          AI
-        </div>
       </div>
     </Link>
   );

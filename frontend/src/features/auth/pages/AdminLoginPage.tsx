@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../../shared/components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../shared/components/ui/Card";
+import logoImage from "../../../assets/ai-career-guide-logo.png";
 
 export function AdminLoginPage() {
   const navigate = useNavigate();
@@ -61,17 +62,10 @@ export function AdminLoginPage() {
         <CardHeader className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
             <img 
-              src="/assets/ai-career-guide-logo.png" 
+              src={logoImage} 
               alt="AI Career Guide" 
               className="w-16 h-16 object-contain"
-              onError={(e) => {
-                // Fallback to emoji if image fails to load
-                e.currentTarget.style.display = 'none';
-                e.currentTarget.nextElementSibling.style.display = 'block';
-              }}
             />
-            {/* Fallback logo */}
-            <div className="hidden text-4xl">🧠</div>
           </div>
           <CardTitle className="text-2xl font-bold text-primary">
             AI Career Guide Admin
