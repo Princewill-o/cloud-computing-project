@@ -41,7 +41,7 @@ def measure_similarity(embedded_cv):
       FROM
         AI.GENERATE_EMBEDDING(
           MODEL `job-recommendations-app.jobs_ds.text_embedding`,
-          (SELECT job_description as content, job_title
+          (SELECT job_description as content, job_title, job_apply_link
           FROM jobs_ds.jobs_jsearch_raw),
           STRUCT('SEMANTIC_SIMILARITY' as task_type)
           );
@@ -51,7 +51,7 @@ def measure_similarity(embedded_cv):
     for row in data:
         v1 = row[0]
         similarity = 100*(np.dot(np.array(v1), np.array(embedded_cv))) / (norm(np.array(v1)) * norm(np.array(embedded_cv)))
-        posting = JobPosting(row.job_title, row.content, similarity)
+        posting = JobPosting(row.job_title, row.content, row.job_apply_link, similarity)
         postings_list.append(posting)
 
     return postings_list
