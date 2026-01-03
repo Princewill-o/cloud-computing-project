@@ -22,9 +22,21 @@ An AI-powered Career Guidance Platform designed to help students and early-caree
 
 3. **Access the Application:**
    - **Frontend**: http://localhost:5175
-   - **Admin Mode (No Auth)**: http://localhost:5175/?admin=true
+   - **Admin Login Page**: http://localhost:5175/admin
+   - **Quick Admin Access**: http://localhost:5175/?admin=true
    - **Backend API**: http://localhost:8000
    - **API Documentation**: http://localhost:8000/docs
+
+### Admin Login Credentials
+
+Use any of these credentials to access the admin dashboard:
+
+| Username | Password | Description |
+|----------|----------|-------------|
+| `admin` | `admin123` | Main admin account |
+| `demo` | `demo123` | Demo user account |
+| `test` | `test123` | Test user account |
+| `guest` | `guest123` | Guest access account |
 
 ### Firebase Setup (Optional)
 

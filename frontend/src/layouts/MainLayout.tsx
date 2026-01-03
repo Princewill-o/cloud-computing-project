@@ -220,8 +220,19 @@ export function MainLayout() {
               )}
             </svg>
           </button>
-          <div className="text-sm font-medium text-primary">
-            {getPageTitle()}
+          <div className="flex flex-col items-center">
+            <div className="text-sm font-medium text-primary">
+              {getPageTitle()}
+            </div>
+            {/* Admin Mode Indicator for Mobile */}
+            {localStorage.getItem('admin_mode') === 'true' && (
+              <div className="flex items-center gap-1 mt-1">
+                <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></div>
+                <span className="text-xs text-orange-600 dark:text-orange-400">
+                  Admin ({localStorage.getItem('admin_user') || 'admin'})
+                </span>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -257,6 +268,26 @@ export function MainLayout() {
         {/* Desktop Header with Theme Toggle */}
         <div className="hidden md:flex items-center justify-end p-4 border-b border-border bg-white/50 dark:bg-gray-900/50 backdrop-blur-md">
           <div className="flex items-center gap-4">
+            {/* Admin Mode Indicator */}
+            {localStorage.getItem('admin_mode') === 'true' && (
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800">
+                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                <span className="text-xs font-medium text-orange-700 dark:text-orange-400">
+                  Admin Mode ({localStorage.getItem('admin_user') || 'admin'})
+                </span>
+                <button
+                  onClick={() => {
+                    localStorage.removeItem('admin_mode');
+                    localStorage.removeItem('admin_user');
+                    navigate('/login');
+                  }}
+                  className="text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-200 ml-1"
+                  title="Exit Admin Mode"
+                >
+                  ×
+                </button>
+              </div>
+            )}
             <ThemeToggle />
             {isAuthenticated && (
               <div className="flex items-center gap-2 text-sm text-secondary">
