@@ -75,6 +75,7 @@ class RecommendationService:
         self.db = db
         self.cv_service = CVService(db)
 
+    @app.get("/recommendations/jobs")
     def get_recommendations(self, user_id: uuid.uuid4, limit: int, offset: int) -> list:
         user_cv_details = self.cv_service.get_user_cv_details(user_id)
         embedded_cv = cv_text_embedding(user_cv_details)
