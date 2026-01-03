@@ -15,6 +15,7 @@ function AppContent() {
     
     if (adminParam === 'true') {
       localStorage.setItem('admin_mode', 'true');
+      localStorage.setItem('admin_user', 'url-admin');
       return true;
     }
     

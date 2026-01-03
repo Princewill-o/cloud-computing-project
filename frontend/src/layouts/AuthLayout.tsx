@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from "react-router-dom";
 import { ThemeToggle } from "../shared/components/ui/ThemeToggle";
+import logoImage from "../assets/ai-career-guide-logo.png";
 
 export function AuthLayout() {
   const location = useLocation();
@@ -28,10 +29,12 @@ export function AuthLayout() {
           
           <div className="max-w-md px-8 relative z-10">
             <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+              <div className="w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+                <img 
+                  src={logoImage} 
+                  alt="AI Career Guide" 
+                  className="w-20 h-20 object-contain"
+                />
               </div>
               <h1 className="text-3xl font-bold mb-4 text-white">
                 AI Career Guide
