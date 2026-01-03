@@ -30,7 +30,8 @@ const requiredEnvVars = [
 const missingEnvVars = requiredEnvVars.filter(envVar => !import.meta.env[envVar]);
 
 if (missingEnvVars.length > 0) {
-  throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  console.warn(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  console.warn('Using demo configuration. Firebase features will not work properly.');
 }
 
 // Initialize Firebase
