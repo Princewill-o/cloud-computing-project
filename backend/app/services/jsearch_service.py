@@ -15,10 +15,12 @@ class JSearchService:
     def __init__(self):
         self.api_key = os.getenv("JSEARCH_API_KEY")
         self.api_host = os.getenv("JSEARCH_API_HOST", "jsearch.p.rapidapi.com")
-        self.base_url = f"https://{self.api_host}"
+        self.base_url = os.getenv("JSEARCH_URL", "https://jsearch.p.rapidapi.com")
         
         if not self.api_key:
             logger.warning("JSEARCH_API_KEY not found in environment variables")
+        else:
+            logger.info("JSearch API initialized successfully")
     
     def _get_headers(self) -> Dict[str, str]:
         """Get headers for JSearch API requests"""

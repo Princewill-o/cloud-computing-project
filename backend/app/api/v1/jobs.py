@@ -6,6 +6,7 @@ from typing import Optional, List
 import logging
 
 from ...services.jsearch_service import jsearch_service
+from ...services.serpapi_service import serpapi_service
 
 logger = logging.getLogger(__name__)
 
@@ -180,3 +181,108 @@ async def get_trending_jobs():
     except Exception as e:
         logger.error(f"Trending jobs error: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error fetching trending jobs")
+
+@router.get("/google-search")
+async def search_google_jobs(
+    query: str = Query(..., description="Job search query"),
+    location: Optional[str] = Query(None, description="Location filter"),
+    chips: Optional[str] = Query(None, description="Additional filters (e.g., 'date_posted:today')"),
+    start: int = Query(0, ge=0, description="Starting position for pagination")
+):
+    """
+    Search for jobs using Google Jobs via SerpAPI
+    
+    This endpoint provides access to Google Jobs search results with advanced filtering.
+    """
+    try:
+        result = await serpapi_service.search_google_jobs(
+            query=query,
+            location=location,
+            chips=chips,
+            start=start
+        )
+        
+        if result["status"] == "error":
+            raise HTTPException(status_code=400, detail=result["message"])
+        
+        return {
+            "success": True,
+            "message": result["message"],
+            "jobs": result["data"],
+            "total_results": result["total_results"],
+            "search_metadata": result["search_metadata"],
+            "start": start
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Google Jobs search error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error during Google Jobs search")
+
+@router.get("/combined-search")
+async def combined_job_search(
+    query: str = Query(..., description="Job search query"),
+    location: Optional[str] = Query(None, description="Location filter"),
+    remote_jobs_only: bool = Query(False, description="Filter for remote jobs only"),
+    use_google: bool = Query(True, description="Include Google Jobs results"),
+    use_jsearch: bool = Query(True, description="Include JSearch results")
+):
+    """
+    Combined search using both JSearch and Google Jobs APIs
+    
+    This endpoint combines results from multiple job search APIs for comprehensive coverage.
+    """
+    try:
+        all_jobs = []
+        sources_used = []
+        
+        # Search using JSearch API
+        if use_jsearch:
+            jsearch_result = await jsearch_service.search_jobs(
+                query=query,
+                location=location,
+                remote_jobs_only=remote_jobs_only,
+                page=1,
+                num_pages=1
+            )
+            
+            if jsearch_result["status"] == "success":
+                all_jobs.extend(jsearch_result["data"])
+                sources_used.append("JSearch API")
+        
+        # Search using Google Jobs via SerpAPI
+        if use_google:
+            google_result = await serpapi_service.search_google_jobs(
+                query=query,
+                location=location,
+                start=0
+            )
+            
+            if google_result["status"] == "success":
+                all_jobs.extend(google_result["data"])
+                sources_used.append("Google Jobs")
+        
+        # Remove duplicates based on job title and company
+        unique_jobs = []
+        seen = set()
+        
+        for job in all_jobs:
+            job_key = (job.get("title", "").lower(), job.get("company", "").lower())
+            if job_key not in seen:
+                seen.add(job_key)
+                unique_jobs.append(job)
+        
+        return {
+            "success": True,
+            "message": f"Combined search completed using {', '.join(sources_used)}",
+            "jobs": unique_jobs[:50],  # Limit to 50 results
+            "total_results": len(unique_jobs),
+            "sources_used": sources_used,
+            "query": query,
+            "location": location
+        }
+        
+    except Exception as e:
+        logger.error(f"Combined search error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error during combined search")

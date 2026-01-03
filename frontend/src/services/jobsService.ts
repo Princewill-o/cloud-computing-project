@@ -196,6 +196,89 @@ class JobsService {
   }
 
   /**
+   * Search Google Jobs via SerpAPI
+   */
+  async searchGoogleJobs(params: {
+    query: string;
+    location?: string;
+    chips?: string;
+    start?: number;
+  }): Promise<JobSearchResponse> {
+    try {
+      const searchParams = new URLSearchParams();
+      
+      searchParams.append('query', params.query);
+      
+      if (params.location) {
+        searchParams.append('location', params.location);
+      }
+      
+      if (params.chips) {
+        searchParams.append('chips', params.chips);
+      }
+      
+      if (params.start) {
+        searchParams.append('start', params.start.toString());
+      }
+
+      const response = await fetch(`${this.baseUrl}/google-search?${searchParams.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error searching Google Jobs:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Combined search using both APIs
+   */
+  async combinedSearch(params: {
+    query: string;
+    location?: string;
+    remote_jobs_only?: boolean;
+    use_google?: boolean;
+    use_jsearch?: boolean;
+  }): Promise<JobSearchResponse> {
+    try {
+      const searchParams = new URLSearchParams();
+      
+      searchParams.append('query', params.query);
+      
+      if (params.location) {
+        searchParams.append('location', params.location);
+      }
+      
+      if (params.remote_jobs_only) {
+        searchParams.append('remote_jobs_only', 'true');
+      }
+      
+      if (params.use_google !== undefined) {
+        searchParams.append('use_google', params.use_google.toString());
+      }
+      
+      if (params.use_jsearch !== undefined) {
+        searchParams.append('use_jsearch', params.use_jsearch.toString());
+      }
+
+      const response = await fetch(`${this.baseUrl}/combined-search?${searchParams.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error in combined search:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Format salary for display
    */
   formatSalary(salary: Job['salary']): string {
