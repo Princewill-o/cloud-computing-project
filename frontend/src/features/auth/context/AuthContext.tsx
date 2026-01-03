@@ -39,9 +39,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
     let unsubscribe: (() => void) | null = null;
     
     try {
+      console.log('Setting up Firebase auth listener...');
       unsubscribe = firebaseAuthService.onAuthStateChanged(async (firebaseUser: FirebaseUser | null) => {
         try {
           if (firebaseUser) {
+            console.log('User signed in:', firebaseUser.uid, firebaseUser.email);
             // User is signed in
             const profile = await firebaseAuthService.getUserProfile(firebaseUser.uid);
             setUser({
@@ -52,6 +54,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
               profile: profile || undefined
             });
           } else {
+            console.log('User signed out');
             // User is signed out
             setUser(null);
           }
@@ -62,6 +65,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
           setLoading(false);
         }
       });
+      console.log('Firebase auth listener set up successfully');
     } catch (error) {
       console.error('Error setting up Firebase auth listener:', error);
       setLoading(false);

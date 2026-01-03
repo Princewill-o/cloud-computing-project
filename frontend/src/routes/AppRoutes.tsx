@@ -4,6 +4,7 @@ import { AuthLayout } from "../layouts/AuthLayout";
 import { LoginPage } from "../features/auth/pages/LoginPage";
 import { RegisterPage } from "../features/auth/pages/RegisterPage";
 import { AdminLoginPage } from "../features/auth/pages/AdminLoginPage";
+import { AuthTestPage } from "../features/auth/pages/AuthTestPage";
 import { DashboardPage } from "../features/dashboard/pages/DashboardPage";
 import { InjectionPage } from "../features/dashboard/pages/InjectionPage";
 import { ProfileOverviewPage } from "../features/profile/pages/ProfileOverviewPage";
@@ -18,6 +19,9 @@ export function AppRoutes() {
     <Routes>
       {/* Admin login - standalone page */}
       <Route path="/admin" element={<AdminLoginPage />} />
+      
+      {/* Auth test page - standalone page */}
+      <Route path="/auth-test" element={<AuthTestPage />} />
 
       {/* Auth pages - public access */}
       <Route element={<AuthLayout />}>
