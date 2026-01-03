@@ -151,9 +151,9 @@ export function ProfileOverviewPage() {
     return (
       <div className="space-y-6 max-w-4xl">
         <header className="text-center space-y-4 py-8">
-          <h2 className="text-3xl font-bold text-primary">AI CV Paraphrasing Platform</h2>
+          <h2 className="text-3xl font-bold text-primary">AI Career Guide Platform</h2>
           <p className="text-lg text-secondary max-w-2xl mx-auto">
-            Transform your CV for any job application with AI-powered paraphrasing. 
+            Get personalized career recommendations and job matching with AI-powered analysis. 
             Optimize your content for specific roles and increase your success rate.
           </p>
         </header>
@@ -517,7 +517,7 @@ export function ProfileOverviewPage() {
             {/* Paraphrasing Benefits */}
             <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
               <div className="text-sm font-medium text-blue-800 dark:text-blue-400 mb-2">
-                🎯 CV Paraphrasing Benefits
+                🎯 AI Career Guide Benefits
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-blue-600 dark:text-blue-500">
                 <div>• Tailor content for specific job titles</div>

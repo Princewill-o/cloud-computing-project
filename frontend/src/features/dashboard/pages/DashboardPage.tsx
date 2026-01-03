@@ -35,7 +35,7 @@ export function DashboardPage() {
         <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-2xl font-bold mb-2">
-              AI CV Paraphrasing Hub 📝
+              AI Career Guide Dashboard 🚀
             </h2>
             <p className="text-white/90">
               Transform your CV for any job application with AI-powered paraphrasing.
@@ -59,14 +59,14 @@ export function DashboardPage() {
         </div>
       </header>
 
-      {/* CV Paraphrasing Status Card */}
+      {/* Career Readiness Status Card */}
       <Card className="border-0 bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-900/10 dark:to-blue-900/10">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <span className="text-xl">🎯</span>
-            <span className="gradient-text">CV Paraphrasing Readiness</span>
+            <span className="gradient-text">Career Readiness Score</span>
           </CardTitle>
-          <CardDescription>Your CV's potential for job-specific paraphrasing and optimization</CardDescription>
+          <CardDescription>Your profile's readiness for career opportunities and job matching</CardDescription>
         </CardHeader>
         <CardContent>
           {progressLoading ? (
@@ -218,7 +218,7 @@ export function DashboardPage() {
         </Card>
       </section>
 
-      {/* CV Paraphrasing Tool */}
+      {/* AI Career Tools */}
       <CVParaphrasing />
 
       {/* New Enhanced Features Section */}

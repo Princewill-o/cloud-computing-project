@@ -29,15 +29,15 @@ export function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const getPageTitle = () => {
-    if (location.pathname === "/" || location.pathname === "/dashboard") return "CV Paraphrasing Hub";
+    if (location.pathname === "/" || location.pathname === "/dashboard") return "AI Career Dashboard";
     if (location.pathname === "/injection") return "Data Injection";
     if (location.pathname === "/profile") return "Profile & CV Upload";
-    if (location.pathname === "/opportunities") return "Paraphrasing Opportunities";
-    if (location.pathname === "/analytics") return "CV Analytics";
+    if (location.pathname === "/opportunities") return "Career Opportunities";
+    if (location.pathname === "/analytics") return "Career Analytics";
     if (location.pathname === "/questionnaire") return "Profile Setup";
     if (location.pathname === "/login") return "Login";
     if (location.pathname === "/register") return "Register";
-    return "AI CV Paraphrasing Platform";
+    return "AI Career Guide Platform";
   };
 
   const handleLogout = async () => {
@@ -52,7 +52,7 @@ export function MainLayout() {
   // Navigation links - All pages now accessible
   const navLinks = [
     {
-      label: "CV Paraphrasing Hub",
+      label: "AI Career Dashboard",
       href: "/dashboard",
       icon: <LayoutDashboard className="text-primary h-5 w-5 flex-shrink-0" />,
       gradient: "from-purple-500 to-blue-500"
@@ -64,7 +64,7 @@ export function MainLayout() {
       gradient: "from-green-500 to-teal-500"
     },
     {
-      label: "Paraphrasing Jobs",
+      label: "Career Opportunities",
       href: "/opportunities",
       icon: <Briefcase className="text-primary h-5 w-5 flex-shrink-0" />,
       gradient: "from-orange-500 to-red-500"
@@ -76,7 +76,7 @@ export function MainLayout() {
       gradient: "from-pink-500 to-purple-500"
     },
     {
-      label: "CV Analytics",
+      label: "Career Analytics",
       href: "/analytics",
       icon: <BarChart3 className="text-primary h-5 w-5 flex-shrink-0" />,
       gradient: "from-blue-500 to-indigo-500"

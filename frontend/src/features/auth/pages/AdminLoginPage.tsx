@@ -60,10 +60,10 @@ export function AdminLoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-primary">
-            🔧 Admin Login
+            🧠 AI Career Guide Admin
           </CardTitle>
           <CardDescription>
-            Access the Career Guidance Platform
+            Access the AI Career Guidance Platform
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
