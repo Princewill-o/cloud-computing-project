@@ -36,25 +36,57 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = firebaseAuthService.onAuthStateChanged(async (firebaseUser: FirebaseUser | null) => {
-      if (firebaseUser) {
-        // User is signed in
-        const profile = await firebaseAuthService.getUserProfile(firebaseUser.uid);
-        setUser({
-          id: firebaseUser.uid,
-          email: firebaseUser.email || "",
-          name: firebaseUser.displayName || profile?.displayName || "",
-          photoURL: firebaseUser.photoURL || profile?.photoURL,
-          profile: profile || undefined
-        });
-      } else {
-        // User is signed out
-        setUser(null);
-      }
+    let unsubscribe: (() => void) | null = null;
+    
+    try {
+      console.log('Setting up Firebase auth listener...');
+      unsubscribe = firebaseAuthService.onAuthStateChanged(async (firebaseUser: FirebaseUser | null) => {
+        try {
+          if (firebaseUser) {
+            console.log('User signed in:', firebaseUser.uid, firebaseUser.email);
+            // User is signed in
+            const profile = await firebaseAuthService.getUserProfile(firebaseUser.uid);
+            setUser({
+              id: firebaseUser.uid,
+              email: firebaseUser.email || "",
+              name: firebaseUser.displayName || profile?.displayName || "",
+              photoURL: firebaseUser.photoURL || profile?.photoURL,
+              profile: profile || undefined
+            });
+          } else {
+            console.log('User signed out');
+            // User is signed out
+            setUser(null);
+          }
+        } catch (error) {
+          console.error('Error in auth state change:', error);
+          setUser(null);
+        } finally {
+          setLoading(false);
+        }
+      });
+      console.log('Firebase auth listener set up successfully');
+    } catch (error) {
+      console.error('Error setting up Firebase auth listener:', error);
       setLoading(false);
-    });
+    }
 
-    return () => unsubscribe();
+    // Fallback timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      console.log('Auth timeout reached, stopping loading');
+      setLoading(false);
+    }, 3000);
+
+    return () => {
+      clearTimeout(timeout);
+      if (unsubscribe) {
+        try {
+          unsubscribe();
+        } catch (error) {
+          console.error('Error unsubscribing from auth:', error);
+        }
+      }
+    };
   }, []);
 
   const login = async (email: string, password: string): Promise<void> => {

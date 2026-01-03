@@ -9,8 +9,7 @@ JSEARCH_URL=https://jsearch.p.rapidapi.com/search
 GCS_BUCKET=jobs_ingestion_data_bucket
 GCS_PREFIX=staging/jsearch
 BQ_PROJECT_ID=job-recommendations-app
-REGION=europe-north1
-PROJECT_NUMBER=608851044020
+REGION-europe-north1
 BQ_DATASET=jobs_ds
 BQ_TABLE=jobs_jsearch_raw
 EVENT_BQ_TABLE = events_google_raw

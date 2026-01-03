@@ -8,7 +8,7 @@ function AppContent() {
   const { loading } = useAuth();
 
   // Admin bypass - check for admin mode in URL or localStorage
-  const isAdminMode = React.useMemo(() => {
+  const [isAdminMode, setIsAdminMode] = React.useState(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const adminParam = urlParams.get('admin');
     const adminStorage = localStorage.getItem('admin_mode');
@@ -20,31 +20,55 @@ function AppContent() {
     }
     
     return adminStorage === 'true';
-  }, []);
+  });
 
   // Add a timeout for loading state to prevent infinite loading
   const [loadingTimeout, setLoadingTimeout] = React.useState(false);
   
   React.useEffect(() => {
+    // Check for admin mode on mount
+    const urlParams = new URLSearchParams(window.location.search);
+    const adminParam = urlParams.get('admin');
+    const adminStorage = localStorage.getItem('admin_mode');
+    
+    if (adminParam === 'true' || adminStorage === 'true') {
+      setIsAdminMode(true);
+    }
+
     const timer = setTimeout(() => {
+      console.log('Loading timeout reached, proceeding to app...');
       setLoadingTimeout(true);
-    }, 5000); // 5 second timeout
+    }, 1500); // Reduced to 1.5 seconds
     
     return () => clearTimeout(timer);
   }, []);
 
-  // If admin mode is enabled, bypass authentication
+  // If admin mode is enabled, bypass authentication immediately
   if (isAdminMode) {
+    console.log('Admin mode detected, bypassing auth');
     return <AppRoutes />;
   }
 
-  if (loading && !loadingTimeout) {
+  // If loading timeout reached, proceed to app regardless of auth state
+  if (loadingTimeout) {
+    console.log('Loading timeout reached, showing app');
+    return <AppRoutes />;
+  }
+
+  // Show loading only for a short time
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-primary">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-black dark:to-blue-900/10">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto mb-4"></div>
-          <p className="text-sm text-secondary">Loading your career dashboard...</p>
-          <p className="text-xs text-tertiary mt-2">This should only take a moment</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Loading your career dashboard...</p>
+          <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Please wait a moment</p>
+          <button 
+            onClick={() => setLoadingTimeout(true)}
+            className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            Skip Loading
+          </button>
         </div>
       </div>
     );

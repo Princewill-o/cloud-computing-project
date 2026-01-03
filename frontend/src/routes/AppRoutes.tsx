@@ -4,12 +4,14 @@ import { AuthLayout } from "../layouts/AuthLayout";
 import { LoginPage } from "../features/auth/pages/LoginPage";
 import { RegisterPage } from "../features/auth/pages/RegisterPage";
 import { AdminLoginPage } from "../features/auth/pages/AdminLoginPage";
+import { AuthTestPage } from "../features/auth/pages/AuthTestPage";
 import { DashboardPage } from "../features/dashboard/pages/DashboardPage";
 import { InjectionPage } from "../features/dashboard/pages/InjectionPage";
 import { ProfileOverviewPage } from "../features/profile/pages/ProfileOverviewPage";
 import { QuestionnairePage } from "../features/profile/pages/QuestionnairePage";
 import { OpportunitiesListPage } from "../features/opportunities/pages/OpportunitiesListPage";
 import { AnalyticsDashboardPage } from "../features/analytics/pages/AnalyticsDashboardPage";
+import { JobSearchPage } from "../features/jobs/pages/JobSearchPage";
 import { ProtectedRoute } from "../shared/components/auth/ProtectedRoute";
 
 export function AppRoutes() {
@@ -17,6 +19,9 @@ export function AppRoutes() {
     <Routes>
       {/* Admin login - standalone page */}
       <Route path="/admin" element={<AdminLoginPage />} />
+      
+      {/* Auth test page - standalone page */}
+      <Route path="/auth-test" element={<AuthTestPage />} />
 
       {/* Auth pages - public access */}
       <Route element={<AuthLayout />}>
@@ -54,6 +59,11 @@ export function AppRoutes() {
         <Route path="opportunities" element={
           <ProtectedRoute>
             <OpportunitiesListPage />
+          </ProtectedRoute>
+        } />
+        <Route path="jobs" element={
+          <ProtectedRoute>
+            <JobSearchPage />
           </ProtectedRoute>
         } />
         <Route path="analytics" element={
