@@ -2,11 +2,41 @@
 
 An AI-powered Career Guidance Platform designed to help students and early-career professionals find their ideal career paths in the tech industry.
 
-## 🚀 Live Demo
+## 🚀 Quick Start
 
-**Frontend**: http://localhost:5174  
-**Backend API**: http://localhost:8000  
-**API Documentation**: http://localhost:8000/docs
+### Development Mode (No Firebase Setup Required)
+
+1. **Start Frontend:**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+2. **Start Backend:**
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+   ```
+
+3. **Access the Application:**
+   - **Frontend**: http://localhost:5175
+   - **Admin Mode (No Auth)**: http://localhost:5175/?admin=true
+   - **Backend API**: http://localhost:8000
+   - **API Documentation**: http://localhost:8000/docs
+
+### Firebase Setup (Optional)
+
+For full authentication features, create a `frontend/.env` file with your Firebase config:
+```env
+VITE_FIREBASE_API_KEY=your_api_key_here
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+```
 
 ## 📋 Test Accounts
 
