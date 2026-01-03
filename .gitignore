@@ -51,7 +51,6 @@ backend/.venv/
 
 # Services
 services/ingestion-service/.env
-services/ingestion-service/.env.example
 
 # Root node_modules
 node_modules/
