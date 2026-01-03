@@ -3,24 +3,24 @@ from google.cloud.exceptions import NotFound
 import os
 from fastapi import FastAPI
 from PyPDF2 import PdfReader
+from sqlalchemy.orm import Session
 from vertexai.preview.language_models import TextEmbeddingModel
 import numpy as np
 from numpy.linalg import norm
 import sys
 sys.path.append('app')
 from models.jobpostingclass import JobPosting
+from app.services.cv_service import CVService
+import uuid
 
 app = FastAPI()
 
-#standardise the naming of the csv. we will call it 'job-data.csv' and it will be created from the json response of our API request. this data
-#will become our BQ table. 
-
+#cant put this information directly in code, but its necessary to access the recommendations system. i dont know what to do.
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "C:\\Users\\kcaes\\Downloads\\cloudproject\\src\\service_account.json"
 
 client = bigquery.Client()
 
-table_id = "job-recommendations-app.jobs_ds.job_data_table"
-
+TABLE_ID = "job-recommendations-app.jobs_ds.jobs_jsearch_raw"
 
 def if_table_exists(client, table_id):
     try:
@@ -29,38 +29,21 @@ def if_table_exists(client, table_id):
     except NotFound:
         return False
 
-
-#need to name this endpoint something.
-@app.post('/')
-def create_job_table():
-    #this csv is our temporary/mock dataset. we will need to replace it with the response from the api fetch once Roinee has set that up.
-    with open(r'\datafiles\jobsdata.csv', "rb") as source_file:
-        if if_table_exists(client, table_id) != True:
-            job_config = bigquery.LoadJobConfig(source_format = bigquery.SourceFormat.CSV, skip_leading_rows = 1, autodetect = True)
-            job = client.load_table_from_file(source_file, table_id, job_config=job_config)
-            print(job.result())
-        else:
-            print("Table already exists")
-            client.delete_table(table_id)
-            job_config = bigquery.LoadJobConfig(source_format = bigquery.SourceFormat.CSV, skip_leading_rows = 1, autodetect = True)
-            job = client.load_table_from_file(source_file, table_id, job_config=job_config)
-            print(job.result())
-            
             
 def get_job_table():
-    table = client.get_table(table_id)
+    table = client.get_table(TABLE_ID)
     return table
 
 
-def measure_similarity():
+def measure_similarity(embedded_cv):
     postings_list = []
     sql_query = """  
     SELECT *
       FROM
         AI.GENERATE_EMBEDDING(
           MODEL `job-recommendations-app.jobs_ds.text_embedding`,
-          (SELECT body as content, job_title
-          FROM jobs_ds.job_data_table),
+          (SELECT job_description as content, job_title
+          FROM jobs_ds.jobs_jsearch_raw),
           STRUCT('SEMANTIC_SIMILARITY' as task_type)
           );
     """
@@ -68,7 +51,7 @@ def measure_similarity():
     data = query_job.result()
     for row in data:
         v1 = row[0]
-        similarity = 100*(np.dot(np.array(v1), np.array(v2))) / (norm(np.array(v1)) * norm(np.array(v2)))
+        similarity = 100*(np.dot(np.array(v1), np.array(embedded_cv))) / (norm(np.array(v1)) * norm(np.array(embedded_cv)))
         posting = JobPosting(row.job_title, row.content, similarity)
         postings_list.append(posting)
 
@@ -82,7 +65,8 @@ def order_by_similarity(postings_list):
 
 @app.get("/recommendations/jobs")
 def get_recommendations():
-    recommendations_list = measure_similarity()
+    embedded_cv = cv_text_embedding(user_cv)
+    recommendations_list = measure_similarity(embedded_cv)
     order_by_similarity(recommendations_list)
 
     #for testing, delete before submitting
@@ -90,22 +74,36 @@ def get_recommendations():
         print("Your CV is a " + str(posting.cv_similarity_score) + " percent match with the job: " + posting.job_name)
 
     return recommendations_list
-    
+
+
+def cv_text_embedding(user_cv):
+    model = TextEmbeddingModel.from_pretrained("gemini-embedding-001")
+    embeddings = model.get_embeddings([user_cv])
+    for embedding in embeddings:
+        v2 = embedding.values
+    return v2
+  
 
 #this reads a given cv file. (i need to put this in its own function)
 reader = PdfReader("datafiles\cv.pdf")
 page = reader.pages[0]
 
 
-#i need to seperate this into its own function
-model = TextEmbeddingModel.from_pretrained("gemini-embedding-001")
-embeddings = model.get_embeddings([page.extract_text()])
-for embedding in embeddings:
-  v2 = embedding.values
-  
 
-#uncomment these to run/test the service
-#create_job_table()
-#get_recommendations()
+# Create a RecommendationService class here that takes in a db, see api/v1/recommendations.py
+class RecommendationService:
+    def __init__(self, db: Session):
+        self.db = db
+        self.cv_service = CVService(db)
 
+    def get_recommendations(self, user_id: uuid.uuid4, limit: int, offset: int) -> list:
+        user_cv_details = self.cv_service.get_user_cv_details(user_id)
+        embedded_cv = cv_text_embedding(user_cv_details)
+        recommendations_list = measure_similarity(embedded_cv)
+        order_by_similarity(recommendations_list)
 
+        #for testing, delete before submitting
+        for posting in recommendations_list:
+            print("Your CV is a " + str(posting.cv_similarity_score) + " percent match with the job: " + posting.job_name)
+
+        return recommendations_list

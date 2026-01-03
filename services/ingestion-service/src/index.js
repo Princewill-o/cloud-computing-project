@@ -71,6 +71,61 @@ app.get('/ingest', async (req, res) => {
     }
 });
 
+app.get('/ingestevent', async (req, res) => {
+    try {
+        const serpApiKey = process.env.SERPAPI_KEY;
+        const bucket = process.env.GCS_BUCKET;
+
+        if (!serpApiKey) {
+            throw new Error('SERPAPI_KEY is required');
+        }
+        if (!bucket) {
+            throw new Error('GCS_BUCKET is required');
+        }
+
+        const engine = 'google_events';
+        const query = req.query.query || 'hackathon';
+        const location = req.query.country || 'london';
+        
+
+        console.log(`Starting ingestion for query="${query}", location=${location}`);
+
+        const events = await fetchEvents({engine, query, location});
+        const statusCode = events.statusCode ?? 200;
+
+        if (!Array.isArray(events) || events.length === 0) {
+            throw new Error('No events returned from JSearch');
+        }
+
+        //need to add a transformEvents
+        //const rows = transformJobs(jobs, { searchQuery: query, country, statusCode });
+
+        const gcsUri = await writeRowsToGCS(rows, {
+            bucketName: bucket,
+            prefix: getEnv('GCS_PREFIX')
+        });
+
+        console.log(`Uploaded ${rows.length} rows to ${gcsUri}`);
+
+        const jobId = await loadToBigQuery(gcsUri, {
+            projectId: getEnv('BQ_PROJECT_ID'),
+            datasetId: getEnv('BQ_DATASET'),
+            tableId: getEnv('BQ_TABLE')
+        });
+
+        console.log(`Triggered BigQuery load job ${jobId}`);
+
+        res.json({
+            inserted_file: gcsUri,
+            load_job_id: jobId,
+            rows: rows.length
+        });
+    } catch (error) {
+        console.error('Ingestion failed:', error.message, error.stack);
+        res.status(500).json({ error: error.message || 'Internal Server Error' });
+    }
+});
+
 app.get('/', (_req, res) => {
     res.json({ status: 'ok' });
 });
