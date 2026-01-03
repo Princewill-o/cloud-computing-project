@@ -15,8 +15,7 @@ import uuid
 
 app = FastAPI()
 
-#cant put this information directly in code, but its necessary to access the recommendations system. i dont know what to do.
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "C:\\Users\\kcaes\\Downloads\\cloudproject\\src\\service_account.json"
+os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
 
 client = bigquery.Client()
 
@@ -63,32 +62,12 @@ def order_by_similarity(postings_list):
     return postings_list
 
 
-@app.get("/recommendations/jobs")
-def get_recommendations():
-    embedded_cv = cv_text_embedding(user_cv)
-    recommendations_list = measure_similarity(embedded_cv)
-    order_by_similarity(recommendations_list)
-
-    #for testing, delete before submitting
-    for posting in recommendations_list:
-        print("Your CV is a " + str(posting.cv_similarity_score) + " percent match with the job: " + posting.job_name)
-
-    return recommendations_list
-
-
 def cv_text_embedding(user_cv):
     model = TextEmbeddingModel.from_pretrained("gemini-embedding-001")
     embeddings = model.get_embeddings([user_cv])
     for embedding in embeddings:
         v2 = embedding.values
     return v2
-  
-
-#this reads a given cv file. (i need to put this in its own function)
-reader = PdfReader("datafiles\cv.pdf")
-page = reader.pages[0]
-
-
 
 # Create a RecommendationService class here that takes in a db, see api/v1/recommendations.py
 class RecommendationService:

@@ -1,5 +1,7 @@
 import express from 'express';
+import 'dotenv/config';
 import { fetchJobs } from './jsearch.client.js';
+import { fetchEvents } from './serpapi.client.js';
 import { transformJobs } from './transform.js';
 import { writeRowsToGCS } from './gcs.writer.js';
 import { loadToBigQuery } from './bq.loader.js';
@@ -13,7 +15,8 @@ const DEFAULTS = {
     GCS_PREFIX: 'staging/jsearch',
     BQ_PROJECT_ID: 'job-recommendations-app',
     BQ_DATASET: 'jobs_ds',
-    BQ_TABLE: 'jobs_jsearch_raw'
+    BQ_TABLE: 'jobs_jsearch_raw',
+    EVENT_BQ_TABLE: 'events_google_raw'
 };
 
 const getEnv = (key) => process.env[key] || DEFAULTS[key];
@@ -71,7 +74,7 @@ app.get('/ingest', async (req, res) => {
     }
 });
 
-app.get('/ingestevent', async (req, res) => {
+app.get('/eventingest', async (req, res) => {
     try {
         const serpApiKey = process.env.SERPAPI_KEY;
         const bucket = process.env.GCS_BUCKET;
@@ -110,7 +113,7 @@ app.get('/ingestevent', async (req, res) => {
         const jobId = await loadToBigQuery(gcsUri, {
             projectId: getEnv('BQ_PROJECT_ID'),
             datasetId: getEnv('BQ_DATASET'),
-            tableId: getEnv('BQ_TABLE')
+            tableId: getEnv('EVENT_BQ_TABLE')
         });
 
         console.log(`Triggered BigQuery load job ${jobId}`);

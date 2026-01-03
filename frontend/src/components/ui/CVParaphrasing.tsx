@@ -86,10 +86,10 @@ export function CVParaphrasing() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Wand2 className="w-5 h-5" />
-            CV Paraphrasing Tool
+            AI Career Optimizer
           </CardTitle>
           <CardDescription>
-            Enter job details to get your CV paraphrased for the specific role
+            Enter job details to get personalized career recommendations and CV optimization
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -130,12 +130,12 @@ export function CVParaphrasing() {
             {paraphraseMutation.isPending ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Paraphrasing CV...
+                Optimizing CV...
               </>
             ) : (
               <>
                 <Wand2 className="w-4 h-4 mr-2" />
-                Paraphrase CV for This Job
+                Optimize for This Job
               </>
             )}
           </Button>
@@ -201,7 +201,7 @@ export function CVParaphrasing() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="w-5 h-5" />
-                  Paraphrased CV Content
+                  Optimized CV Content
                 </CardTitle>
                 <CardDescription>
                   Optimized for: {result.job_application_details?.target_job_title}
@@ -362,7 +362,7 @@ export function CVParaphrasing() {
         <Card className="border-red-200 dark:border-red-800">
           <CardContent className="pt-6">
             <div className="text-center text-red-600 dark:text-red-400">
-              <p className="font-medium">Paraphrasing Failed</p>
+              <p className="font-medium">Optimization Failed</p>
               <p className="text-sm mt-1">
                 {paraphraseMutation.error?.message || "Please try again or check if your CV is uploaded."}
               </p>

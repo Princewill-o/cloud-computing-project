@@ -21,6 +21,7 @@ import {
   LogOut
 } from "lucide-react";
 import { useState } from "react";
+import logoImage from "../assets/ai-career-guide-logo.png";
 
 export function MainLayout() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -29,15 +30,15 @@ export function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const getPageTitle = () => {
-    if (location.pathname === "/" || location.pathname === "/dashboard") return "CV Paraphrasing Hub";
+    if (location.pathname === "/" || location.pathname === "/dashboard") return "AI Career Dashboard";
     if (location.pathname === "/injection") return "Data Injection";
     if (location.pathname === "/profile") return "Profile & CV Upload";
-    if (location.pathname === "/opportunities") return "Paraphrasing Opportunities";
-    if (location.pathname === "/analytics") return "CV Analytics";
+    if (location.pathname === "/opportunities") return "Career Opportunities";
+    if (location.pathname === "/analytics") return "Career Analytics";
     if (location.pathname === "/questionnaire") return "Profile Setup";
     if (location.pathname === "/login") return "Login";
     if (location.pathname === "/register") return "Register";
-    return "AI CV Paraphrasing Platform";
+    return "AI Career Guide Platform";
   };
 
   const handleLogout = async () => {
@@ -52,7 +53,7 @@ export function MainLayout() {
   // Navigation links - All pages now accessible
   const navLinks = [
     {
-      label: "CV Paraphrasing Hub",
+      label: "AI Career Dashboard",
       href: "/dashboard",
       icon: <LayoutDashboard className="text-primary h-5 w-5 flex-shrink-0" />,
       gradient: "from-purple-500 to-blue-500"
@@ -64,7 +65,7 @@ export function MainLayout() {
       gradient: "from-green-500 to-teal-500"
     },
     {
-      label: "Paraphrasing Jobs",
+      label: "Career Opportunities",
       href: "/opportunities",
       icon: <Briefcase className="text-primary h-5 w-5 flex-shrink-0" />,
       gradient: "from-orange-500 to-red-500"
@@ -76,7 +77,7 @@ export function MainLayout() {
       gradient: "from-pink-500 to-purple-500"
     },
     {
-      label: "CV Analytics",
+      label: "Career Analytics",
       href: "/analytics",
       icon: <BarChart3 className="text-primary h-5 w-5 flex-shrink-0" />,
       gradient: "from-blue-500 to-indigo-500"
@@ -199,29 +200,47 @@ export function MainLayout() {
       <div className="flex-1 flex flex-col">
         {/* Mobile Header */}
         <div className="md:hidden flex items-center justify-between p-4 border-b border-border bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
-          <button
-            className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            aria-label="Toggle menu"
-          >
-            <svg
-              className="w-5 h-5 text-primary"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          <div className="flex items-center gap-3">
+            <button
+              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              aria-label="Toggle menu"
             >
-              {sidebarOpen ? (
-                <path d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
-          <div className="text-sm font-medium text-primary">
-            {getPageTitle()}
+              <svg
+                className="w-5 h-5 text-primary"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                {sidebarOpen ? (
+                  <path d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+            <img 
+              src={logoImage} 
+              alt="AI Career Guide" 
+              className="w-8 h-8 object-contain"
+            />
+          </div>
+          <div className="flex flex-col items-center">
+            <div className="text-sm font-medium text-primary">
+              {getPageTitle()}
+            </div>
+            {/* Admin Mode Indicator for Mobile */}
+            {localStorage.getItem('admin_mode') === 'true' && (
+              <div className="flex items-center gap-1 mt-1">
+                <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></div>
+                <span className="text-xs text-orange-600 dark:text-orange-400">
+                  Admin ({localStorage.getItem('admin_user') || 'admin'})
+                </span>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -255,8 +274,38 @@ export function MainLayout() {
         </div>
 
         {/* Desktop Header with Theme Toggle */}
-        <div className="hidden md:flex items-center justify-end p-4 border-b border-border bg-white/50 dark:bg-gray-900/50 backdrop-blur-md">
+        <div className="hidden md:flex items-center justify-between p-4 border-b border-border bg-white/50 dark:bg-gray-900/50 backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <img 
+              src={logoImage} 
+              alt="AI Career Guide" 
+              className="w-8 h-8 object-contain"
+            />
+            <span className="font-semibold text-primary bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              AI Career Guide
+            </span>
+          </div>
           <div className="flex items-center gap-4">
+            {/* Admin Mode Indicator */}
+            {localStorage.getItem('admin_mode') === 'true' && (
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800">
+                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                <span className="text-xs font-medium text-orange-700 dark:text-orange-400">
+                  Admin Mode ({localStorage.getItem('admin_user') || 'admin'})
+                </span>
+                <button
+                  onClick={() => {
+                    localStorage.removeItem('admin_mode');
+                    localStorage.removeItem('admin_user');
+                    navigate('/login');
+                  }}
+                  className="text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-200 ml-1"
+                  title="Exit Admin Mode"
+                >
+                  ×
+                </button>
+              </div>
+            )}
             <ThemeToggle />
             {isAuthenticated && (
               <div className="flex items-center gap-2 text-sm text-secondary">
