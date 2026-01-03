@@ -9,16 +9,15 @@ from app.database import get_db
 from app.services.auth_service import get_current_user
 from app.services.recommendation_service import RecommendationService
 from app.models.user import User
-from app.schemas.recommendations import OpportunitiesResponse, SkillGapsResponse
 
 router = APIRouter()
 
 
-@router.get("/opportunities", response_model=OpportunitiesResponse)
+@router.get("/opportunities")
 async def get_opportunities(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    type: Optional[str] = Query(None),
+    #type: Optional[str] = Query(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -29,7 +28,7 @@ async def get_opportunities(
         user_id=current_user.user_id,
         limit=limit,
         offset=offset,
-        opportunity_type=type
+        # opportunity_type=type
     )
     
     return opportunities
