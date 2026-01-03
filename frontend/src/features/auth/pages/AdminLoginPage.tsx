@@ -59,8 +59,22 @@ export function AdminLoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-black dark:to-blue-900/10 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <img 
+              src="/assets/ai-career-guide-logo.png" 
+              alt="AI Career Guide" 
+              className="w-16 h-16 object-contain"
+              onError={(e) => {
+                // Fallback to emoji if image fails to load
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling.style.display = 'block';
+              }}
+            />
+            {/* Fallback logo */}
+            <div className="hidden text-4xl">🧠</div>
+          </div>
           <CardTitle className="text-2xl font-bold text-primary">
-            🧠 AI Career Guide Admin
+            AI Career Guide Admin
           </CardTitle>
           <CardDescription>
             Access the AI Career Guidance Platform

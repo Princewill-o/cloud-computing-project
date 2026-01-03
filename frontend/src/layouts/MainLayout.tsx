@@ -199,27 +199,37 @@ export function MainLayout() {
       <div className="flex-1 flex flex-col">
         {/* Mobile Header */}
         <div className="md:hidden flex items-center justify-between p-4 border-b border-border bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
-          <button
-            className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            aria-label="Toggle menu"
-          >
-            <svg
-              className="w-5 h-5 text-primary"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          <div className="flex items-center gap-3">
+            <button
+              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              aria-label="Toggle menu"
             >
-              {sidebarOpen ? (
-                <path d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
+              <svg
+                className="w-5 h-5 text-primary"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                {sidebarOpen ? (
+                  <path d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+            <img 
+              src="/assets/ai-career-guide-logo.png" 
+              alt="AI Career Guide" 
+              className="w-8 h-8 object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          </div>
           <div className="flex flex-col items-center">
             <div className="text-sm font-medium text-primary">
               {getPageTitle()}
@@ -266,7 +276,20 @@ export function MainLayout() {
         </div>
 
         {/* Desktop Header with Theme Toggle */}
-        <div className="hidden md:flex items-center justify-end p-4 border-b border-border bg-white/50 dark:bg-gray-900/50 backdrop-blur-md">
+        <div className="hidden md:flex items-center justify-between p-4 border-b border-border bg-white/50 dark:bg-gray-900/50 backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <img 
+              src="/assets/ai-career-guide-logo.png" 
+              alt="AI Career Guide" 
+              className="w-8 h-8 object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+            <span className="font-semibold text-primary bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              AI Career Guide
+            </span>
+          </div>
           <div className="flex items-center gap-4">
             {/* Admin Mode Indicator */}
             {localStorage.getItem('admin_mode') === 'true' && (

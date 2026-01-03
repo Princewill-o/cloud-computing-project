@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useSidebar } from "./sidebar";
-import { Brain, Sparkles } from "lucide-react";
 
 export const SidebarLogo = () => {
   const { open, animate } = useSidebar();
@@ -9,11 +8,23 @@ export const SidebarLogo = () => {
   return (
     <Link
       to="/"
-      className="font-normal flex space-x-2 items-center text-sm text-primary py-1 relative z-20 group"
+      className="font-normal flex space-x-3 items-center text-sm text-primary py-2 relative z-20 group"
     >
-      <div className="relative flex items-center justify-center h-8 w-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex-shrink-0 group-hover:from-purple-700 group-hover:to-blue-700 transition-all duration-200">
-        <Brain className="h-4 w-4 text-white" />
-        <Sparkles className="h-2 w-2 text-yellow-300 absolute -top-0.5 -right-0.5 animate-pulse" />
+      <div className="relative flex items-center justify-center h-10 w-10 flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
+        <img 
+          src="/assets/ai-career-guide-logo.png" 
+          alt="AI Career Guide" 
+          className="h-10 w-10 object-contain"
+          onError={(e) => {
+            // Fallback to text logo if image fails to load
+            e.currentTarget.style.display = 'none';
+            e.currentTarget.nextElementSibling.style.display = 'flex';
+          }}
+        />
+        {/* Fallback logo */}
+        <div className="hidden items-center justify-center h-10 w-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg text-white font-bold text-lg">
+          AI
+        </div>
       </div>
       <motion.span
         animate={{
@@ -32,11 +43,23 @@ export const SidebarLogoIcon = () => {
   return (
     <Link
       to="/"
-      className="font-normal flex space-x-2 items-center text-sm text-primary py-1 relative z-20 group"
+      className="font-normal flex space-x-2 items-center text-sm text-primary py-2 relative z-20 group"
     >
-      <div className="relative flex items-center justify-center h-8 w-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex-shrink-0 group-hover:from-purple-700 group-hover:to-blue-700 transition-all duration-200">
-        <Brain className="h-4 w-4 text-white" />
-        <Sparkles className="h-2 w-2 text-yellow-300 absolute -top-0.5 -right-0.5 animate-pulse" />
+      <div className="relative flex items-center justify-center h-10 w-10 flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
+        <img 
+          src="/assets/ai-career-guide-logo.png" 
+          alt="AI Career Guide" 
+          className="h-10 w-10 object-contain"
+          onError={(e) => {
+            // Fallback to text logo if image fails to load
+            e.currentTarget.style.display = 'none';
+            e.currentTarget.nextElementSibling.style.display = 'flex';
+          }}
+        />
+        {/* Fallback logo */}
+        <div className="hidden items-center justify-center h-10 w-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg text-white font-bold text-lg">
+          AI
+        </div>
       </div>
     </Link>
   );
