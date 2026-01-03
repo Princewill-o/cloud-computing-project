@@ -1,4 +1,5 @@
 import express from 'express';
+import 'dotenv/config';
 import { fetchJobs } from './jsearch.client.js';
 import { transformJobs } from './transform.js';
 import { writeRowsToGCS } from './gcs.writer.js';
