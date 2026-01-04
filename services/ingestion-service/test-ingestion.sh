@@ -19,6 +19,7 @@ fi
 QUERY="${1:-software engineer}"
 COUNTRY="${2:-GB}"
 NUM_PAGES="${3:-1}"
+ENABLE_DETAILS="${4:-false}"
 
 # URL encode the query
 QUERY_ENCODED=$(echo -n "$QUERY" | jq -sRr @uri 2>/dev/null || python3 -c "import urllib.parse; print(urllib.parse.quote('$QUERY'))")
@@ -28,19 +29,24 @@ echo "Testing ingestion service..."
 echo "  Query: $QUERY"
 echo "  Country: $COUNTRY"
 echo "  Pages: $NUM_PAGES"
+echo "  Phase 2 (Details): $ENABLE_DETAILS"
 echo ""
+
+# Build URL with optional enable_details parameter
+URL="${SERVICE_URL}/ingest?query=${QUERY_ENCODED}&country=${COUNTRY}&num_pages=${NUM_PAGES}"
+if [ "$ENABLE_DETAILS" = "true" ] || [ "$ENABLE_DETAILS" = "1" ]; then
+    URL="${URL}&enable_details=true"
+fi
 
 # Make the request
 RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X GET \
-  "${SERVICE_URL}/ingest?query=${QUERY_ENCODED}&country=${COUNTRY}&num_pages=${NUM_PAGES}" \
+  "${URL}" \
   -H "Authorization: bearer ${TOKEN}")
 
 # Extract HTTP status and body
 HTTP_STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
 BODY=$(echo "$RESPONSE" | sed '/HTTP_STATUS:/d')
 
-
-#Commands added to if statements to test correct bucket and BigQuery data ingestion in dataset
 echo "Response:"
 echo "----------"
 if [ "$HTTP_STATUS" == "200" ]; then

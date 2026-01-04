@@ -108,13 +108,19 @@ app.get('/ingest', async (req, res) => {
 
         console.log(`Uploaded ${rows.length} rows to ${gcsUri}`);
 
-        const jobId = await loadToBigQuery(gcsUri, {
-            projectId: getEnv('BQ_PROJECT_ID'),
-            datasetId: getEnv('BQ_DATASET'),
-            tableId: getEnv('BQ_TABLE')
-        });
-
-        console.log(`Triggered BigQuery load job ${jobId}`);
+        let jobId = null;
+        try {
+            jobId = await loadToBigQuery(gcsUri, {
+                projectId: getEnv('BQ_PROJECT_ID'),
+                datasetId: getEnv('BQ_DATASET'),
+                tableId: getEnv('BQ_TABLE')
+            });
+            console.log(`Triggered BigQuery load job ${jobId}`);
+        } catch (bqError) {
+            console.error('BigQuery load failed (but data is in GCS):', bqError.message);
+            // Don't fail the entire request - data is already in GCS
+            // The user can manually load it later if needed
+        }
 
         res.json({
             inserted_file: gcsUri,
@@ -122,7 +128,8 @@ app.get('/ingest', async (req, res) => {
             rows: rows.length,
             phase: enableDetails ? 'search+details' : 'search',
             jobs_found: jobs.length,
-            jobs_enriched: enableDetails ? enrichedJobs.filter(j => j !== null).length : 0
+            jobs_enriched: enableDetails ? enrichedJobs.filter(j => j !== null).length : 0,
+            bigquery_load_success: jobId !== null
         });
     } catch (error) {
         console.error('Ingestion failed:', error.message, error.stack);
