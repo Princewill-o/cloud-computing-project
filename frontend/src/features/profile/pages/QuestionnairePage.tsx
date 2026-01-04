@@ -151,7 +151,7 @@ export function QuestionnairePage() {
               />
             </div>
 
-            <Button type="submit" className="w-full" isLoading={mutation.isPending}>
+            <Button type="submit" className="w-full" disabled={mutation.isPending}>
               Save Questionnaire
             </Button>
           </CardContent>

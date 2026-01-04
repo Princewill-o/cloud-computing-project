@@ -12,7 +12,7 @@ export function AuthTest() {
   const testRegister = async () => {
     setLoading(true);
     try {
-      const user = await authService.register({ email, password, full_name: fullName });
+      const user = await authService.register({ email, password, displayName: fullName });
       setResult({ success: true, message: 'Registration successful', user });
     } catch (error: any) {
       setResult({ success: false, message: error.message });
@@ -165,7 +165,7 @@ Education:
         <h3 className="font-bold mb-2">Current Auth State:</h3>
         <p><strong>Authenticated:</strong> {authService.isAuthenticated() ? 'Yes' : 'No'}</p>
         <p><strong>Current User:</strong> {JSON.stringify(authService.getCurrentUser())}</p>
-        <p><strong>Access Token:</strong> {authService.getAccessToken() ? 'Present' : 'None'}</p>
+        <p><strong>Access Token:</strong> {authService.getCurrentUser() ? 'Present' : 'None'}</p>
       </div>
     </div>
   );

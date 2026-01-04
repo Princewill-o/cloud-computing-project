@@ -265,7 +265,7 @@ export function ProfileOverviewPage() {
 
             {isEditing && (
               <div className="flex gap-3 mt-6">
-                <Button onClick={handleSave} isLoading={isSaving}>
+                <Button onClick={handleSave} disabled={isSaving}>
                   Save Changes
                 </Button>
                 <Button variant="outline" onClick={handleCancel}>

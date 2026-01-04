@@ -20,9 +20,9 @@ export function AuthTestPage() {
 
     try {
       if (isRegistering) {
-        await register(email, password, displayName);
+        await register({ email, password, displayName });
       } else {
-        await login(email, password);
+        await login({ email, password });
       }
     } catch (error: any) {
       setError(error.message || 'Authentication failed');
@@ -69,7 +69,7 @@ export function AuthTestPage() {
               {user && (
                 <>
                   <div>
-                    <strong>User ID:</strong> {user.id}
+                    <strong>User ID:</strong> {user.uid}
                   </div>
                   <div>
                     <strong>Email:</strong> {user.email}
