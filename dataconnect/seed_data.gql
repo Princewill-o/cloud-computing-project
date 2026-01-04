@@ -1,0 +1,66 @@
+mutation CreateDemoData @transaction @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public") {
+  user_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      displayName: "demouser1",
+      email: "demouser1@example.com",
+      createdAt: "2024-01-01T00:00:00Z"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      displayName: "demouser2",
+      email: "demouser2@example.com",
+      createdAt: "2024-01-01T00:00:00Z"
+    }
+  ])
+  project_insertMany(data: [
+    {
+      id: "660e8400-e29b-41d4-a716-446655440000",
+      ownerId: "550e8400-e29b-41d4-a716-446655440000",
+      name: "Demo Project 1",
+      createdAt: "2024-01-02T00:00:00Z",
+      dueDate: "2024-02-01"
+    },
+    {
+      id: "660e8400-e29b-41d4-a716-446655440001",
+      ownerId: "550e8400-e29b-41d4-a716-446655440001",
+      name: "Demo Project 2",
+      createdAt: "2024-01-02T00:00:00Z",
+      dueDate: "2024-02-01"
+    }
+  ])
+  task_insertMany(data: [
+    {
+      id: "770e8400-e29b-41d4-a716-446655440000",
+      projectId: "660e8400-e29b-41d4-a716-446655440000",
+      title: "Demo Task 1",
+      status: "TODO",
+      createdAt: "2024-01-03T00:00:00Z",
+      dueDate: "2024-01-15"
+    },
+    {
+      id: "770e8400-e29b-41d4-a716-446655440001",
+      projectId: "660e8400-e29b-41d4-a716-446655440001",
+      title: "Demo Task 2",
+      status: "TODO",
+      createdAt: "2024-01-03T00:00:00Z",
+      dueDate: "2024-01-15"
+    }
+  ])
+  comment_insertMany(data: [
+    {
+      id: "880e8400-e29b-41d4-a716-446655440000",
+      taskId: "770e8400-e29b-41d4-a716-446655440000",
+      userId: "550e8400-e29b-41d4-a716-446655440000",
+      content: "Example comment from demouser1",
+      createdAt: "2024-01-04T00:00:00Z"
+    },
+    {
+      id: "880e8400-e29b-41d4-a716-446655440001",
+      taskId: "770e8400-e29b-41d4-a716-446655440001",
+      userId: "550e8400-e29b-41d4-a716-446655440001",
+      content: "Example comment from demouser2",
+      createdAt: "2024-01-04T00:00:00Z"
+    }
+  ])
+}

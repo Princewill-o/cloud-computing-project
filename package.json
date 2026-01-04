@@ -6,13 +6,10 @@
     "prepare": "cd frontend && npm install && cd .. && husky install"
   },
   "devDependencies": {
+    "firebase-tools": "^15.1.0",
     "husky": "^9.1.7"
+  },
+  "dependencies": {
+    "@dataconnect/generated": "file:src/dataconnect-generated"
   }
 }
-
-
-
-
-
-
-
