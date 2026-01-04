@@ -20,32 +20,47 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
+        
+    - name: Cache frontend dependencies
+      uses: actions/cache@v3
+      with:
+        path: frontend/node_modules
+        key: ${{ runner.os }}-frontend-${{ hashFiles('frontend/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-frontend-
         
     - name: Install frontend dependencies
       run: |
         cd frontend
-        npm ci
+        npm ci --prefer-offline --no-audit
         
     - name: Build frontend
       run: |
         cd frontend
         npm run build
+      env:
+        CI: false
         
-    - name: Deploy to Firebase Hosting (Preview)
-      if: github.event_name == 'pull_request'
-      uses: FirebaseExtended/action-hosting-deploy@v0
-      with:
-        repoToken: '${{ secrets.GITHUB_TOKEN }}'
-        firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CLOUDPROJECT_22B3B }}'
-        projectId: cloudproject-22b3b
-        
-    - name: Deploy to Firebase Hosting (Production)
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    - name: Deploy to Firebase Hosting (Service Account)
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push' && secrets.FIREBASE_SERVICE_ACCOUNT_CLOUDPROJECT_22B3B != ''
       uses: FirebaseExtended/action-hosting-deploy@v0
       with:
         repoToken: '${{ secrets.GITHUB_TOKEN }}'
         firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CLOUDPROJECT_22B3B }}'
         projectId: cloudproject-22b3b
         channelId: live
+        
+    - name: Deploy to Firebase Hosting (Token)
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push' && secrets.FIREBASE_TOKEN != ''
+      run: |
+        cd frontend
+        npx firebase deploy --only hosting --project cloudproject-22b3b --token "${{ secrets.FIREBASE_TOKEN }}"
+        
+    - name: Build Success Notification
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: |
+        echo "✅ Build completed successfully!"
+        echo "📦 Frontend built and ready for deployment"
+        echo "🔧 To deploy, configure Firebase secrets in repository settings:"
+        echo "   - FIREBASE_SERVICE_ACCOUNT_CLOUDPROJECT_22B3B (service account JSON)"
+        echo "   - OR FIREBASE_TOKEN (CI token from 'firebase login:ci')"

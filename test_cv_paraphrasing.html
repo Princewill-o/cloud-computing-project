@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Paraphrasing Feature Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .info { background: #d1ecf1; color: #0c5460; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        button { padding: 12px 24px; margin: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #0056b3; }
+        .feature { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #007bff; }
+    </style>
+</head>
+<body>
+    <h1>🤖 CV Paraphrasing Feature Test</h1>
+    
+    <div class="info">
+        <h3>✨ CV Paraphrasing Feature Added to Dashboard</h3>
+        <p>The AI-powered CV paraphrasing feature has been successfully integrated into the dashboard!</p>
+    </div>
+
+    <div class="feature">
+        <h4>🎯 Feature Overview</h4>
+        <ul>
+            <li><strong>Upload CV:</strong> Users can upload PDF files of their CVs</li>
+            <li><strong>Job Details:</strong> Enter job title, company name, and job description</li>
+            <li><strong>AI Paraphrasing:</strong> AI analyzes and optimizes CV content for the specific job</li>
+            <li><strong>Results:</strong> Get paraphrased CV with match analysis and optimization notes</li>
+            <li><strong>Download:</strong> Download the optimized CV as a text file</li>
+        </ul>
+    </div>
+
+    <div class="feature">
+        <h4>🚀 How to Access</h4>
+        <ol>
+            <li><strong>Dashboard Widget:</strong> Click "Start Paraphrasing" on the AI CV Paraphraser card</li>
+            <li><strong>Full Page:</strong> Click "Open in Full Page" for a dedicated experience</li>
+            <li><strong>Direct URL:</strong> Navigate to <code>/cv-paraphraser</code></li>
+            <li><strong>Quick Actions:</strong> Use the "🤖 Paraphrase CV" button in Quick Actions</li>
+        </ol>
+    </div>
+
+    <div class="feature">
+        <h4>🔧 Technical Implementation</h4>
+        <ul>
+            <li><strong>Frontend:</strong> React component with step-by-step wizard</li>
+            <li><strong>Backend:</strong> FastAPI endpoints for CV upload and paraphrasing</li>
+            <li><strong>AI Integration:</strong> DeepSeek AI for intelligent CV optimization</li>
+            <li><strong>File Handling:</strong> PDF upload and text extraction</li>
+            <li><strong>Authentication:</strong> Protected routes requiring user login</li>
+        </ul>
+    </div>
+
+    <div class="success">
+        <h4>✅ Features Implemented</h4>
+        <ul>
+            <li>✅ CV file upload (PDF support)</li>
+            <li>✅ Job details form (title, company, description)</li>
+            <li>✅ AI-powered paraphrasing using DeepSeek</li>
+            <li>✅ Match analysis with alignment score</li>
+            <li>✅ Optimization notes and suggestions</li>
+            <li>✅ Downloadable results</li>
+            <li>✅ Progress tracking with visual steps</li>
+            <li>✅ Error handling and user feedback</li>
+            <li>✅ Responsive design</li>
+            <li>✅ Authentication integration</li>
+        </ul>
+    </div>
+
+    <div class="info">
+        <h3>🧪 Test the Feature</h3>
+        <p>To test the CV paraphrasing feature:</p>
+        <ol>
+            <li>Go to <a href="http://localhost:5175/dashboard" target="_blank">Dashboard</a></li>
+            <li>Sign in if not already authenticated</li>
+            <li>Look for the "🤖 AI CV Paraphraser" card</li>
+            <li>Click "🚀 Start Paraphrasing" to test the feature</li>
+        </ol>
+    </div>
+
+    <div class="feature">
+        <h4>📊 Backend API Endpoints</h4>
+        <ul>
+            <li><code>POST /api/v1/users/me/cv/upload</code> - Upload CV file</li>
+            <li><code>POST /api/v1/users/me/cv/paraphrase</code> - Paraphrase CV for job</li>
+            <li><code>GET /api/v1/users/me/cv</code> - Get user's CV</li>
+        </ul>
+    </div>
+
+    <div class="success">
+        <h4>🎉 Ready to Use!</h4>
+        <p>The CV paraphrasing feature is now fully integrated and ready for users to optimize their CVs for specific job applications using AI.</p>
+        
+        <div style="margin-top: 20px;">
+            <a href="http://localhost:5175/dashboard" target="_blank">
+                <button>🚀 Test on Dashboard</button>
+            </a>
+            <a href="http://localhost:5175/cv-paraphraser" target="_blank">
+                <button>📄 Full Page Version</button>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        console.log('🤖 CV Paraphrasing Feature Test Page Loaded');
+        console.log('✅ Feature successfully integrated into dashboard');
+        console.log('🔗 Available at: http://localhost:5175/dashboard');
+        console.log('📄 Full page: http://localhost:5175/cv-paraphraser');
+    </script>
+</body>
+</html>

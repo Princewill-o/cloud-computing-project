@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Frontend-Backend Connection Test</title>
+</head>
+<body>
+    <h1>Testing Frontend-Backend Connection</h1>
+    <button onclick="testConnection()">Test API Connection</button>
+    <div id="result"></div>
+
+    <script>
+        async function testConnection() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch('http://localhost:8001/api/v1/users/me');
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <h3>✅ Success!</h3>
+                    <p>Status: ${response.status}</p>
+                    <p>Data: ${JSON.stringify(data, null, 2)}</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3>❌ Error!</h3>
+                    <p>Error: ${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

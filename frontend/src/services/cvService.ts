@@ -65,7 +65,7 @@ export interface ParaphraseResponse {
 }
 
 class CVService {
-  private baseUrl = 'http://localhost:8000/api/v1/users/me/cv';
+  private baseUrl = 'http://localhost:8001/api/v1/users/me/cv';
 
   async uploadCV(file: File, analysisType: string = 'paraphrasing'): Promise<CVUploadResponse> {
     try {
@@ -73,14 +73,12 @@ class CVService {
       formData.append('file', file);
       formData.append('analysis_type', analysisType);
 
+      const headers = await authService.getAuthHeaders();
+      const { 'Content-Type': _, ...headersWithoutContentType } = headers;
+
       const response = await fetch(`${this.baseUrl}/upload`, {
         method: 'POST',
-        headers: {
-          // Don't set Content-Type for FormData, let browser set it with boundary
-          ...Object.fromEntries(
-            Object.entries(authService.getAuthHeaders()).filter(([key]) => key !== 'Content-Type')
-          ),
-        },
+        headers: headersWithoutContentType,
         body: formData,
       });
 
@@ -98,9 +96,10 @@ class CVService {
 
   async getCV(): Promise<CVAnalysis> {
     try {
+      const headers = await authService.getAuthHeaders();
       const response = await fetch(this.baseUrl, {
         method: 'GET',
-        headers: authService.getAuthHeaders(),
+        headers,
       });
 
       if (!response.ok) {
@@ -126,14 +125,12 @@ class CVService {
         formData.append('company_name', request.company_name);
       }
 
+      const headers = await authService.getAuthHeaders();
+      const { 'Content-Type': _, ...headersWithoutContentType } = headers;
+
       const response = await fetch(`${this.baseUrl}/paraphrase`, {
         method: 'POST',
-        headers: {
-          // Don't set Content-Type for FormData, let browser set it with boundary
-          ...Object.fromEntries(
-            Object.entries(authService.getAuthHeaders()).filter(([key]) => key !== 'Content-Type')
-          ),
-        },
+        headers: headersWithoutContentType,
         body: formData,
       });
 

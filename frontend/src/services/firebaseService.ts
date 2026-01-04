@@ -19,7 +19,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { app } from '../config/firebase';
+import app from '../config/firebase';
 
 const db = getFirestore(app);
 const storage = getStorage(app);

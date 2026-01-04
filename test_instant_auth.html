@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instant Authentication Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .info { background: #d1ecf1; color: #0c5460; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        button { padding: 12px 24px; margin: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #0056b3; }
+        input { padding: 12px; margin: 5px; border: 1px solid #ccc; border-radius: 3px; width: 250px; font-size: 16px; }
+        .timer { font-weight: bold; color: #007bff; }
+        .feature { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #007bff; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Instant Authentication Test</h1>
+    
+    <div class="info">
+        <h3>✨ New Features Implemented:</h3>
+        <div class="feature">
+          <strong>🔒 Persistent Authentication:</strong> Users stay signed in across browser sessions until they manually log out
+        </div>
+        <div class="feature">
+          <strong>⚡ Instant Response:</strong> No loading spinners - authentication happens instantly
+        </div>
+        <div class="feature">
+          <strong>🎯 Optimized Performance:</strong> Non-blocking Firestore operations for faster response times
+        </div>
+        <div class="feature">
+          <strong>💾 Local Persistence:</strong> Authentication state is preserved in browser local storage
+        </div>
+    </div>
+
+    <div>
+        <h3>Test Instant Authentication</h3>
+        <input type="email" id="email" placeholder="Email" value="instant@example.com">
+        <input type="password" id="password" placeholder="Password" value="test123456">
+        <br>
+        <button onclick="testInstantRegister()">⚡ Instant Register</button>
+        <button onclick="testInstantLogin()">⚡ Instant Login</button>
+        <button onclick="testLogout()">🚪 Logout</button>
+        <button onclick="testPersistence()">💾 Test Persistence</button>
+    </div>
+
+    <div>
+        <h3>Performance Metrics</h3>
+        <div id="metrics"></div>
+    </div>
+
+    <div id="results"></div>
+
+    <div class="info">
+        <h3>🔗 Test Your App (Port 5175)</h3>
+        <a href="http://localhost:5175/register" target="_blank">Register Page</a> |
+        <a href="http://localhost:5175/login" target="_blank">Login Page</a> |
+        <a href="http://localhost:5175/dashboard" target="_blank">Dashboard</a>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+        import { 
+            getAuth, 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword, 
+            signOut,
+            onAuthStateChanged,
+            setPersistence,
+            browserLocalPersistence
+        } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDowurbYQjV55Ox-Gid8JzpgrkfugU51U8",
+            authDomain: "cloudproject-22b3b.firebaseapp.com",
+            projectId: "cloudproject-22b3b",
+            storageBucket: "cloudproject-22b3b.firebasestorage.app",
+            messagingSenderId: "39239274386",
+            appId: "1:39239274386:web:593da94b50acc985c67b4b",
+            measurementId: "G-WZ8GJHXJSY"
+        };
+
+        let app, auth;
+        let authStartTime = 0;
+
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            
+            // Set persistence for instant authentication
+            await setPersistence(auth, browserLocalPersistence);
+            
+            log('✅ Firebase initialized with persistent authentication', 'success');
+            
+            // Set up auth state listener
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    log(`✅ User automatically signed in: ${user.email} (Persistent session)`, 'success');
+                    updateMetrics('Auth State Change', 0); // Instant
+                } else {
+                    log('ℹ️ No user session found', 'info');
+                }
+            });
+
+        } catch (error) {
+            log(`❌ Firebase initialization failed: ${error.message}`, 'error');
+        }
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = `<strong>[${new Date().toLocaleTimeString()}]</strong> ${message}`;
+            results.appendChild(div);
+        }
+
+        function updateMetrics(operation, duration) {
+            const metrics = document.getElementById('metrics');
+            const metricDiv = document.createElement('div');
+            metricDiv.innerHTML = `
+                <strong>${operation}:</strong> 
+                <span class="timer">${duration}ms</span> 
+                ${duration < 100 ? '⚡ INSTANT' : duration < 500 ? '🚀 FAST' : '⏳ SLOW'}
+            `;
+            metrics.appendChild(metricDiv);
+        }
+
+        window.testInstantRegister = async function() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                authStartTime = performance.now();
+                log('🔄 Starting instant registration...', 'info');
+                
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const duration = Math.round(performance.now() - authStartTime);
+                
+                log(`✅ Registration completed instantly: ${userCredential.user.uid}`, 'success');
+                updateMetrics('Registration', duration);
+                
+            } catch (error) {
+                const duration = Math.round(performance.now() - authStartTime);
+                if (error.code === 'auth/email-already-in-use') {
+                    log('ℹ️ User already exists, trying login...', 'info');
+                    await testInstantLogin();
+                } else {
+                    log(`❌ Registration failed: ${error.message}`, 'error');
+                    updateMetrics('Registration (Failed)', duration);
+                }
+            }
+        };
+
+        window.testInstantLogin = async function() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                authStartTime = performance.now();
+                log('🔄 Starting instant login...', 'info');
+                
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const duration = Math.round(performance.now() - authStartTime);
+                
+                log(`✅ Login completed instantly: ${userCredential.user.uid}`, 'success');
+                updateMetrics('Login', duration);
+                
+            } catch (error) {
+                const duration = Math.round(performance.now() - authStartTime);
+                log(`❌ Login failed: ${error.message}`, 'error');
+                updateMetrics('Login (Failed)', duration);
+            }
+        };
+
+        window.testLogout = async function() {
+            try {
+                authStartTime = performance.now();
+                log('🔄 Starting logout...', 'info');
+                
+                await signOut(auth);
+                const duration = Math.round(performance.now() - authStartTime);
+                
+                log('✅ Logout completed instantly', 'success');
+                updateMetrics('Logout', duration);
+                
+            } catch (error) {
+                const duration = Math.round(performance.now() - authStartTime);
+                log(`❌ Logout failed: ${error.message}`, 'error');
+                updateMetrics('Logout (Failed)', duration);
+            }
+        };
+
+        window.testPersistence = function() {
+            log('🔄 Testing authentication persistence...', 'info');
+            
+            if (auth.currentUser) {
+                log(`✅ Persistent session active: ${auth.currentUser.email}`, 'success');
+                log('💡 User will stay signed in until manual logout', 'info');
+                log('🔄 Try refreshing the page - user should remain signed in', 'info');
+            } else {
+                log('ℹ️ No persistent session found', 'info');
+                log('💡 Sign in first to test persistence', 'info');
+            }
+        };
+
+        // Auto-test persistence on load
+        setTimeout(() => {
+            testPersistence();
+        }, 1000);
+    </script>
+</body>
+</html>

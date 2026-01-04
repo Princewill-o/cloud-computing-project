@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Firebase Auth Test</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+</head>
+<body>
+    <h1>Firebase Authentication Test</h1>
+    <div id="status">Initializing...</div>
+    <div id="user-info"></div>
+    
+    <div style="margin: 20px 0;">
+        <h3>Test Registration</h3>
+        <input type="email" id="email" placeholder="Email" value="test@example.com">
+        <input type="password" id="password" placeholder="Password" value="test123456">
+        <button onclick="testRegister()">Register</button>
+        <button onclick="testLogin()">Login</button>
+        <button onclick="testLogout()">Logout</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDowurbYQjV55Ox-Gid8JzpgrkfugU51U8",
+            authDomain: "cloudproject-22b3b.firebaseapp.com",
+            projectId: "cloudproject-22b3b",
+            storageBucket: "cloudproject-22b3b.firebasestorage.app",
+            messagingSenderId: "39239274386",
+            appId: "1:39239274386:web:593da94b50acc985c67b4b",
+            measurementId: "G-WZ8GJHXJSY"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // Auth state listener
+        auth.onAuthStateChanged((user) => {
+            const statusDiv = document.getElementById('status');
+            const userInfoDiv = document.getElementById('user-info');
+            
+            if (user) {
+                statusDiv.innerHTML = '✅ User is signed in';
+                userInfoDiv.innerHTML = `
+                    <h3>User Info:</h3>
+                    <p>UID: ${user.uid}</p>
+                    <p>Email: ${user.email}</p>
+                    <p>Display Name: ${user.displayName}</p>
+                `;
+            } else {
+                statusDiv.innerHTML = '❌ User is signed out';
+                userInfoDiv.innerHTML = '';
+            }
+        });
+
+        async function testRegister() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                resultsDiv.innerHTML = `✅ Registration successful: ${userCredential.user.email}`;
+            } catch (error) {
+                resultsDiv.innerHTML = `❌ Registration failed: ${error.message}`;
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                resultsDiv.innerHTML = `✅ Login successful: ${userCredential.user.email}`;
+            } catch (error) {
+                resultsDiv.innerHTML = `❌ Login failed: ${error.message}`;
+            }
+        }
+
+        async function testLogout() {
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                await auth.signOut();
+                resultsDiv.innerHTML = `✅ Logout successful`;
+            } catch (error) {
+                resultsDiv.innerHTML = `❌ Logout failed: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

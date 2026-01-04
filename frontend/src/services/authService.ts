@@ -1,7 +1,9 @@
 /**
- * Firebase Authentication service
+ * Firebase Authentication service using v9+ modular SDK
+ * Optimized for instant authentication and persistent sessions
  */
 import { 
+  getAuth,
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
   signOut,
@@ -11,7 +13,10 @@ import {
   sendPasswordResetEmail,
   GoogleAuthProvider,
   signInWithPopup,
-  GithubAuthProvider
+  GithubAuthProvider,
+  AuthError,
+  setPersistence,
+  browserLocalPersistence
 } from "firebase/auth";
 import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../config/firebase";
@@ -48,8 +53,14 @@ class AuthService {
   private currentUser: User | null = null;
 
   constructor() {
-    // Set up auth state listener
+    // Ensure persistence is set for instant authentication
+    setPersistence(auth, browserLocalPersistence).catch((error) => {
+      console.error('Error setting auth persistence:', error);
+    });
+
+    // Set up auth state listener with immediate response
     onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log('Firebase auth state changed:', firebaseUser ? 'User signed in' : 'User signed out');
       if (firebaseUser) {
         this.currentUser = await this.createUserFromFirebaseUser(firebaseUser);
       } else {
@@ -59,26 +70,43 @@ class AuthService {
   }
 
   private async createUserFromFirebaseUser(firebaseUser: FirebaseUser): Promise<User> {
-    // Get additional user data from Firestore
-    const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-    const userData = userDoc.data();
+    try {
+      // Get additional user data from Firestore (non-blocking)
+      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+      const userData = userDoc.data();
 
-    return {
-      uid: firebaseUser.uid,
-      email: firebaseUser.email || '',
-      displayName: firebaseUser.displayName || null,
-      name: firebaseUser.displayName || null,
-      full_name: firebaseUser.displayName || '',
-      photoURL: firebaseUser.photoURL || undefined,
-      profilePicture: firebaseUser.photoURL || undefined,
-      createdAt: userData?.createdAt,
-      lastLoginAt: new Date().toISOString(),
-      ...userData // Include any additional data from Firestore
-    };
+      return {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email || '',
+        displayName: firebaseUser.displayName || null,
+        name: firebaseUser.displayName || null,
+        full_name: firebaseUser.displayName || '',
+        photoURL: firebaseUser.photoURL || undefined,
+        profilePicture: firebaseUser.photoURL || undefined,
+        createdAt: userData?.createdAt,
+        lastLoginAt: new Date().toISOString(),
+        ...userData // Include any additional data from Firestore
+      };
+    } catch (error) {
+      console.error('Error creating user from Firebase user:', error);
+      // Return basic user info if Firestore fails - don't block authentication
+      return {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email || '',
+        displayName: firebaseUser.displayName || null,
+        name: firebaseUser.displayName || null,
+        full_name: firebaseUser.displayName || '',
+        photoURL: firebaseUser.photoURL || undefined,
+        profilePicture: firebaseUser.photoURL || undefined,
+        lastLoginAt: new Date().toISOString(),
+      };
+    }
   }
 
   async register(data: RegisterRequest): Promise<User> {
     try {
+      console.log('Starting registration for:', data.email);
+      
       // Create user with Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(
         auth, 
@@ -86,12 +114,14 @@ class AuthService {
         data.password
       );
 
-      // Update the user's display name
-      await updateProfile(userCredential.user, {
-        displayName: data.displayName
-      });
+      console.log('User created successfully:', userCredential.user.uid);
 
-      // Create user document in Firestore
+      // Update the user's display name (non-blocking)
+      updateProfile(userCredential.user, {
+        displayName: data.displayName
+      }).catch(error => console.warn('Profile update failed:', error));
+
+      // Create user document in Firestore (non-blocking for instant response)
       const userData = {
         uid: userCredential.user.uid,
         email: data.email,
@@ -102,9 +132,11 @@ class AuthService {
         profileComplete: false
       };
 
-      await setDoc(doc(db, 'users', userCredential.user.uid), userData);
+      setDoc(doc(db, 'users', userCredential.user.uid), userData).catch(error => 
+        console.warn('Firestore document creation failed:', error)
+      );
 
-      // Return the user object
+      // Return the user object immediately
       return await this.createUserFromFirebaseUser(userCredential.user);
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -124,16 +156,20 @@ class AuthService {
 
   async login(data: LoginRequest): Promise<User> {
     try {
+      console.log('Starting login for:', data.email);
+      
       const userCredential = await signInWithEmailAndPassword(
         auth, 
         data.email, 
         data.password
       );
 
-      // Update last login time in Firestore
-      await updateDoc(doc(db, 'users', userCredential.user.uid), {
+      console.log('Login successful:', userCredential.user.uid);
+
+      // Update last login time in Firestore (non-blocking for instant response)
+      updateDoc(doc(db, 'users', userCredential.user.uid), {
         lastLoginAt: new Date().toISOString()
-      });
+      }).catch(error => console.warn('Could not update last login time:', error));
 
       return await this.createUserFromFirebaseUser(userCredential.user);
     } catch (error: any) {
@@ -148,6 +184,8 @@ class AuthService {
         throw new Error('Please enter a valid email address');
       } else if (error.code === 'auth/too-many-requests') {
         throw new Error('Too many failed attempts. Please try again later');
+      } else if (error.code === 'auth/invalid-credential') {
+        throw new Error('Invalid email or password');
       }
       
       throw new Error(error.message || 'Login failed');
@@ -156,33 +194,39 @@ class AuthService {
 
   async loginWithGoogle(): Promise<User> {
     try {
+      console.log('Starting Google login');
+      
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
 
-      // Create or update user document in Firestore
-      const userRef = doc(db, 'users', userCredential.user.uid);
-      const userDoc = await getDoc(userRef);
+      console.log('Google login successful:', userCredential.user.uid);
 
-      if (!userDoc.exists()) {
-        // Create new user document
-        const userData = {
-          uid: userCredential.user.uid,
-          email: userCredential.user.email,
-          displayName: userCredential.user.displayName,
-          full_name: userCredential.user.displayName,
-          photoURL: userCredential.user.photoURL,
-          createdAt: new Date().toISOString(),
-          lastLoginAt: new Date().toISOString(),
-          profileComplete: false,
-          provider: 'google'
-        };
-        await setDoc(userRef, userData);
-      } else {
-        // Update last login time
-        await updateDoc(userRef, {
-          lastLoginAt: new Date().toISOString()
-        });
-      }
+      // Create or update user document in Firestore (non-blocking)
+      const userRef = doc(db, 'users', userCredential.user.uid);
+      getDoc(userRef).then(async (userDoc) => {
+        if (!userDoc.exists()) {
+          // Create new user document
+          const userData = {
+            uid: userCredential.user.uid,
+            email: userCredential.user.email,
+            displayName: userCredential.user.displayName,
+            full_name: userCredential.user.displayName,
+            photoURL: userCredential.user.photoURL,
+            createdAt: new Date().toISOString(),
+            lastLoginAt: new Date().toISOString(),
+            profileComplete: false,
+            provider: 'google'
+          };
+          await setDoc(userRef, userData);
+          console.log('New Google user document created');
+        } else {
+          // Update last login time
+          await updateDoc(userRef, {
+            lastLoginAt: new Date().toISOString()
+          });
+          console.log('Existing Google user login time updated');
+        }
+      }).catch(error => console.warn('Firestore operation failed:', error));
 
       return await this.createUserFromFirebaseUser(userCredential.user);
     } catch (error: any) {
@@ -200,33 +244,39 @@ class AuthService {
 
   async loginWithGitHub(): Promise<User> {
     try {
+      console.log('Starting GitHub login');
+      
       const provider = new GithubAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
 
-      // Create or update user document in Firestore
-      const userRef = doc(db, 'users', userCredential.user.uid);
-      const userDoc = await getDoc(userRef);
+      console.log('GitHub login successful:', userCredential.user.uid);
 
-      if (!userDoc.exists()) {
-        // Create new user document
-        const userData = {
-          uid: userCredential.user.uid,
-          email: userCredential.user.email,
-          displayName: userCredential.user.displayName,
-          full_name: userCredential.user.displayName,
-          photoURL: userCredential.user.photoURL,
-          createdAt: new Date().toISOString(),
-          lastLoginAt: new Date().toISOString(),
-          profileComplete: false,
-          provider: 'github'
-        };
-        await setDoc(userRef, userData);
-      } else {
-        // Update last login time
-        await updateDoc(userRef, {
-          lastLoginAt: new Date().toISOString()
-        });
-      }
+      // Create or update user document in Firestore (non-blocking)
+      const userRef = doc(db, 'users', userCredential.user.uid);
+      getDoc(userRef).then(async (userDoc) => {
+        if (!userDoc.exists()) {
+          // Create new user document
+          const userData = {
+            uid: userCredential.user.uid,
+            email: userCredential.user.email,
+            displayName: userCredential.user.displayName,
+            full_name: userCredential.user.displayName,
+            photoURL: userCredential.user.photoURL,
+            createdAt: new Date().toISOString(),
+            lastLoginAt: new Date().toISOString(),
+            profileComplete: false,
+            provider: 'github'
+          };
+          await setDoc(userRef, userData);
+          console.log('New GitHub user document created');
+        } else {
+          // Update last login time
+          await updateDoc(userRef, {
+            lastLoginAt: new Date().toISOString()
+          });
+          console.log('Existing GitHub user login time updated');
+        }
+      }).catch(error => console.warn('Firestore operation failed:', error));
 
       return await this.createUserFromFirebaseUser(userCredential.user);
     } catch (error: any) {
@@ -244,8 +294,10 @@ class AuthService {
 
   async logout(): Promise<void> {
     try {
+      console.log('Starting logout');
       await signOut(auth);
       this.currentUser = null;
+      console.log('Logout successful');
     } catch (error) {
       console.error('Logout error:', error);
       throw error;
@@ -254,7 +306,9 @@ class AuthService {
 
   async resetPassword(email: string): Promise<void> {
     try {
+      console.log('Sending password reset email to:', email);
       await sendPasswordResetEmail(auth, email);
+      console.log('Password reset email sent');
     } catch (error: any) {
       console.error('Password reset error:', error);
       
@@ -274,21 +328,26 @@ class AuthService {
     }
 
     try {
+      console.log('Updating user profile:', data);
+      
       // Update Firebase Auth profile if display name or photo changed
-      if (data.displayName || data.photoURL) {
+      if (data.displayName !== undefined || data.photoURL !== undefined) {
         await updateProfile(auth.currentUser, {
-          displayName: data.displayName || auth.currentUser.displayName,
-          photoURL: data.photoURL || auth.currentUser.photoURL
+          displayName: data.displayName !== undefined ? data.displayName : auth.currentUser.displayName,
+          photoURL: data.photoURL !== undefined ? data.photoURL : auth.currentUser.photoURL
         });
+        console.log('Firebase Auth profile updated');
       }
 
-      // Update Firestore document
-      await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+      // Update Firestore document with all profile data
+      const userRef = doc(db, 'users', auth.currentUser.uid);
+      await updateDoc(userRef, {
         ...data,
         updatedAt: new Date().toISOString()
       });
+      console.log('Firestore user document updated');
 
-      // Update current user
+      // Update current user in memory
       if (this.currentUser) {
         this.currentUser = { ...this.currentUser, ...data };
       }
