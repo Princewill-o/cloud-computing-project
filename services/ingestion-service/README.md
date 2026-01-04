@@ -2,6 +2,19 @@
 
 This directory contains microservices for the job recommendations platform's data pipeline.
 
+## Contributer : Roinee
+
+Hi, I’m Roinee, and I owned the batch data-ingestion pipeline that keeps our platform’s job data up to date, so the CV/job matching and recommendations features always have fresh data.
+
+To make this cloud-native, I integrated Google Cloud services: Cloud Run to host the ingestion service, Cloud Storage to stage transformed data, BigQuery as our central analytics store, Secret Manager for secure credential handling, and Cloud Scheduler to automate batch runs.
+
+For jobs, I integrated the JSearch API via RapidAPI and built a two-phase ingestion workflow. Phase 1 uses the /search endpoint to discover job listings, and Phase 2—optionally—calls /job-details to enrich them with full descriptions and extra fields. The service pulls listings as JSON, transforms them into a BigQuery-aligned schema—like JobID, JobTitle, JobDescription, ApplyLink, plus metadata—writes the staged output to Cloud Storage, then triggers BigQuery load jobs to populate our jobs_jsearch_raw table. Centralising this in BigQuery enables fast querying and smooth integration with downstream recommendation services.
+
+Security was a major focus. I stored the RapidAPI key in Secret Manager, configured a least-privilege runtime service account—ingestion-run-sa—with only the permissions needed for secret access, GCS writes, and BigQuery loads, and ensured there are no hardcoded credentials in the codebase. I also documented a safe API key rotation approach.
+
+On the DevOps side, I set up Cloud Build automation for container builds and deployments to Cloud Run, and used Cloud Scheduler to run the pipeline daily with configurable schedules. Finally, I produced key documentation—testing guides, deployment and troubleshooting steps, API notes, and demo walkthroughs—so the team could reproduce the setup quickly and present it reliably
+
+
 ## Overview
 
 The services folder contains cloud-native microservices that handle data ingestion, transformation, and synchronization for the platform.
