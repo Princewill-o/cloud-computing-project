@@ -5,19 +5,10 @@ import {
   useEffect,
   type PropsWithChildren,
 } from "react";
-import { User as FirebaseUser } from "firebase/auth";
-import { firebaseAuthService, UserProfile } from "../../../services/firebaseAuth";
-
-type User = {
-  id: string;
-  email: string;
-  name?: string;
-  photoURL?: string;
-  profile?: UserProfile;
-};
+import { authService, User as BackendUser } from "../../../services/authService";
 
 type AuthContextValue = {
-  user: User | null;
+  user: BackendUser | null;
   isAuthenticated: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -26,74 +17,37 @@ type AuthContextValue = {
   loginWithGitHub: () => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
-  updateProfile: (data: Partial<UserProfile>) => Promise<void>;
+  updateProfile: (data: any) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: PropsWithChildren) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<BackendUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let unsubscribe: (() => void) | null = null;
-    
-    try {
-      console.log('Setting up Firebase auth listener...');
-      unsubscribe = firebaseAuthService.onAuthStateChanged(async (firebaseUser: FirebaseUser | null) => {
-        try {
-          if (firebaseUser) {
-            console.log('User signed in:', firebaseUser.uid, firebaseUser.email);
-            // User is signed in
-            const profile = await firebaseAuthService.getUserProfile(firebaseUser.uid);
-            setUser({
-              id: firebaseUser.uid,
-              email: firebaseUser.email || "",
-              name: firebaseUser.displayName || profile?.displayName || "",
-              photoURL: firebaseUser.photoURL || profile?.photoURL,
-              profile: profile || undefined
-            });
-          } else {
-            console.log('User signed out');
-            // User is signed out
-            setUser(null);
-          }
-        } catch (error) {
-          console.error('Error in auth state change:', error);
-          setUser(null);
-        } finally {
-          setLoading(false);
-        }
+    // Check if user is already logged in
+    const currentUser = authService.getCurrentUser();
+    if (currentUser) {
+      setUser({
+        user_id: currentUser.user_id,
+        email: currentUser.email,
+        full_name: currentUser.full_name,
+        name: currentUser.full_name, // Add alias
       });
-      console.log('Firebase auth listener set up successfully');
-    } catch (error) {
-      console.error('Error setting up Firebase auth listener:', error);
-      setLoading(false);
     }
-
-    // Fallback timeout to prevent infinite loading
-    const timeout = setTimeout(() => {
-      console.log('Auth timeout reached, stopping loading');
-      setLoading(false);
-    }, 3000);
-
-    return () => {
-      clearTimeout(timeout);
-      if (unsubscribe) {
-        try {
-          unsubscribe();
-        } catch (error) {
-          console.error('Error unsubscribing from auth:', error);
-        }
-      }
-    };
+    setLoading(false);
   }, []);
 
   const login = async (email: string, password: string): Promise<void> => {
     setLoading(true);
     try {
-      await firebaseAuthService.login(email, password);
-      // User state will be updated by the onAuthStateChanged listener
+      const backendUser = await authService.login({ email, password });
+      setUser({
+        ...backendUser,
+        name: backendUser.full_name, // Add alias
+      });
     } finally {
       setLoading(false);
     }
@@ -102,50 +56,47 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const register = async (email: string, password: string, displayName: string): Promise<void> => {
     setLoading(true);
     try {
-      await firebaseAuthService.register(email, password, displayName);
-      // User state will be updated by the onAuthStateChanged listener
+      const backendUser = await authService.register({ 
+        email, 
+        password, 
+        full_name: displayName 
+      });
+      setUser({
+        ...backendUser,
+        name: backendUser.full_name, // Add alias
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const loginWithGoogle = async (): Promise<void> => {
-    setLoading(true);
-    try {
-      await firebaseAuthService.signInWithGoogle();
-      // User state will be updated by the onAuthStateChanged listener
-    } finally {
-      setLoading(false);
-    }
+    // For now, we'll use a demo account for Google login
+    // In a real app, you'd implement OAuth flow
+    await login("demo@example.com", "password123");
   };
 
   const loginWithGitHub = async (): Promise<void> => {
-    setLoading(true);
-    try {
-      await firebaseAuthService.signInWithGitHub();
-      // User state will be updated by the onAuthStateChanged listener
-    } finally {
-      setLoading(false);
-    }
+    // For now, we'll use a demo account for GitHub login
+    // In a real app, you'd implement OAuth flow
+    await login("test@careerguide.com", "testpass123");
   };
 
   const logout = async (): Promise<void> => {
-    await firebaseAuthService.logout();
-    // User state will be updated by the onAuthStateChanged listener
+    authService.logout();
+    setUser(null);
   };
 
   const resetPassword = async (email: string): Promise<void> => {
-    await firebaseAuthService.resetPassword(email);
+    // For demo purposes, just show success
+    console.log("Password reset requested for:", email);
+    throw new Error("Password reset functionality not implemented in demo");
   };
 
-  const updateProfile = async (data: Partial<UserProfile>): Promise<void> => {
-    if (!user) throw new Error("No user logged in");
-    
-    await firebaseAuthService.updateUserProfile(user.id, data);
-    // Refresh user data
-    const updatedProfile = await firebaseAuthService.getUserProfile(user.id);
-    if (updatedProfile) {
-      setUser(prev => prev ? { ...prev, profile: updatedProfile } : null);
+  const updateProfile = async (data: any): Promise<void> => {
+    // For demo purposes, just update local state
+    if (user) {
+      setUser({ ...user, ...data });
     }
   };
 

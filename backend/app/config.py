@@ -80,6 +80,31 @@ class Settings(BaseSettings):
     JOB_BOARD_API_KEY: str = os.getenv("JOB_BOARD_API_KEY", "")
     COURSE_PROVIDER_API_KEY: str = os.getenv("COURSE_PROVIDER_API_KEY", "")
     
+    # JSearch API Configuration
+    JSEARCH_API_KEY: str = os.getenv("JSEARCH_API_KEY", "")
+    JSEARCH_API_HOST: str = os.getenv("JSEARCH_API_HOST", "jsearch.p.rapidapi.com")
+    JSEARCH_URL: str = os.getenv("JSEARCH_URL", "https://jsearch.p.rapidapi.com/search")
+    
+    # SerpAPI Configuration
+    SERPAPI_KEY: str = os.getenv("SERPAPI_KEY", "")
+    SERPAPI_HOST: str = os.getenv("SERPAPI_HOST", "serpapi.com")
+    SERPAPI_API_URL: str = os.getenv("SERPAPI_API_URL", "https://serpapi.com/search")
+    
+    # DeepSeek AI Configuration
+    DEEPSEEK_TOKEN: str = os.getenv("DEEPSEEK_TOKEN", "")
+    
+    # Google Cloud Data Configuration
+    GCS_BUCKET: str = os.getenv("GCS_BUCKET", "jobs_ingestion_data_bucket")
+    GCS_PREFIX: str = os.getenv("GCS_PREFIX", "staging/jsearch")
+    BQ_PROJECT_ID: str = os.getenv("BQ_PROJECT_ID", "job-recommendations-app")
+    REGION: str = os.getenv("REGION", "europe-north1")
+    BQ_DATASET: str = os.getenv("BQ_DATASET", "jobs_ds")
+    BQ_TABLE: str = os.getenv("BQ_TABLE", "jobs_jsearch_raw")
+    EVENT_BQ_TABLE: str = os.getenv("EVENT_BQ_TABLE", "events_google_raw")
+    
+    # Development Configuration
+    DRY_RUN: bool = os.getenv("DRY_RUN", "False").lower() == "true"
+    
     # Security
     ENABLE_HTTPS_REDIRECT: bool = os.getenv("ENABLE_HTTPS_REDIRECT", "False").lower() == "true"
     TRUSTED_HOSTS: List[str] = os.getenv("TRUSTED_HOSTS", "localhost,127.0.0.1").split(",")

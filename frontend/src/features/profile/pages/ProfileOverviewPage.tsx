@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../..
 import { Button } from "../../../shared/components/ui/Button";
 import { Input } from "../../../shared/components/ui/Input";
 import { useAuth } from "../../auth/hooks/useAuth";
-import { profileService } from "../services/profileService";
-import { firebaseAuthService } from "../../../services/firebaseAuth";
+import { cvService } from "../../../services/cvService";
+import { firebaseService } from "../../../services/firebaseService";
+import { analyticsService } from "../../../services/analyticsService";
 import { User, Upload, Save, Edit3, Camera } from "lucide-react";
 
 export function ProfileOverviewPage() {
@@ -17,7 +18,7 @@ export function ProfileOverviewPage() {
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
-    displayName: "",
+    name: "",
     jobTitle: "",
     location: "",
     skills: [] as string[],
@@ -32,84 +33,83 @@ export function ProfileOverviewPage() {
   useEffect(() => {
     if (user) {
       setEditForm({
-        displayName: user.name || "",
-        jobTitle: user.profile?.jobTitle || "",
-        location: user.profile?.location || "",
-        skills: user.profile?.skills || [],
-        experience: user.profile?.experience || "",
-        bio: user.profile?.bio || ""
+        name: user.name || user.full_name || "",
+        jobTitle: (user as any).jobTitle || "",
+        location: (user as any).location || "",
+        skills: (user as any).skills || [],
+        experience: (user as any).experience || "",
+        bio: (user as any).bio || ""
       });
     }
   }, [user]);
 
-  const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ["profile"],
-    queryFn: () => profileService.getProfile(),
-    enabled: isAuthenticated,
+  // Load user profile from Firebase
+  const { data: firebaseProfile, isLoading: profileLoading } = useQuery({
+    queryKey: ["firebase-profile", user?.user_id],
+    queryFn: () => firebaseService.getUserProfile(user?.user_id || ""),
+    enabled: isAuthenticated && !!(user as any)?.user_id,
   });
 
-  const { data: skills, isLoading: skillsLoading } = useQuery({
-    queryKey: ["skills"],
-    queryFn: () => profileService.getSkills(),
-    enabled: isAuthenticated,
-  });
-
+  // Load CV data
   const { data: cv, isLoading: cvLoading } = useQuery({
-    queryKey: ["cv"],
-    queryFn: () => profileService.getCV(),
+    queryKey: ["cv", user?.user_id],
+    queryFn: () => firebaseService.getUserCV(user?.user_id || ""),
+    enabled: isAuthenticated && !!(user as any)?.user_id,
+  });
+
+  // Load user analytics
+  const { data: userAnalytics } = useQuery({
+    queryKey: ["user-analytics", user?.user_id],
+    queryFn: () => analyticsService.getUserAnalytics(),
     enabled: isAuthenticated,
   });
 
   // Profile update mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (data: any) => {
-      if (!user) throw new Error("No user logged in");
+      if (!(user as any)?.user_id) throw new Error("No user logged in");
       
-      // Update Firebase profile
-      await firebaseAuthService.updateUserProfile(user.id, {
-        displayName: data.displayName,
+      // Save to Firebase
+      await firebaseService.saveUserProfile({
+        uid: (user as any).user_id,
+        email: user.email,
+        name: data.name,
         jobTitle: data.jobTitle,
         location: data.location,
         skills: data.skills,
         experience: data.experience,
         bio: data.bio,
-        profileComplete: true
       });
-      
-      // Update auth context
+
+      // Update local auth state
       await updateProfile({
-        displayName: data.displayName,
+        name: data.name,
         jobTitle: data.jobTitle,
         location: data.location,
         skills: data.skills,
         experience: data.experience,
         bio: data.bio,
-        profileComplete: true
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
       setIsEditing(false);
+      queryClient.invalidateQueries({ queryKey: ["firebase-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["user-analytics"] });
     },
   });
 
   // CV upload mutation
   const uploadCvMutation = useMutation({
     mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("analysis_type", "full");
+      if (!(user as any)?.user_id) throw new Error("No user logged in");
       
-      const response = await fetch("/api/v1/users/me/cv/upload", {
-        method: "POST",
-        body: formData,
-      });
+      // Upload to Firebase Storage and save metadata
+      const cvData = await firebaseService.uploadCV((user as any).user_id, file);
       
-      if (!response.ok) {
-        throw new Error("Failed to upload CV");
-      }
+      // Also upload to backend for analysis
+      await cvService.uploadCV(file, "paraphrasing");
       
-      return response.json();
+      return cvData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cv"] });
@@ -146,7 +146,14 @@ export function ProfileOverviewPage() {
     }
   };
 
-  // Show login/signup prompt if not authenticated
+  // Track profile view
+  useEffect(() => {
+    if (isAuthenticated) {
+      analyticsService.trackProfileView();
+    }
+  }, [isAuthenticated]);
+
+  // Show login prompt if not authenticated
   if (!isAuthenticated) {
     return (
       <div className="space-y-6 max-w-4xl">
@@ -195,58 +202,56 @@ export function ProfileOverviewPage() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
-              <Button 
-                className="flex-1" 
-                onClick={() => navigate("/register")}
-              >
-                Sign Up
-              </Button>
-              <Button 
-                variant="outline" 
-                className="flex-1"
-                onClick={() => navigate("/login")}
-              >
-                Log In
-              </Button>
-            </div>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  // Show profile if authenticated
+  // Use Firebase profile data if available, fallback to auth user data
+  const profileData = firebaseProfile || user;
+  const currentSkills = editForm.skills.length > 0 ? editForm.skills : ((profileData as any)?.skills || []);
+
   return (
     <div className="space-y-6 max-w-4xl">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-primary">Your Profile</h2>
           <p className="text-sm text-secondary mt-1">
-            Manage your profile information, skills, and CV.
+            Manage your profile information, skills, and CV. Data is securely stored and synced.
           </p>
+          {userAnalytics && (
+            <div className="flex items-center gap-4 mt-2 text-xs text-secondary">
+              <span>Profile Completeness: {userAnalytics.profileCompleteness}%</span>
+              <span>Profile Views: {userAnalytics.profileViews}</span>
+              <span>Applications: {userAnalytics.applicationsCount}</span>
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
           {!isEditing ? (
-            <Button onClick={() => setIsEditing(true)} className="flex items-center gap-2">
+            <Button 
+              onClick={() => setIsEditing(true)} 
+              className="flex items-center gap-2"
+            >
               <Edit3 className="w-4 h-4" />
               Edit Profile
             </Button>
           ) : (
             <div className="flex gap-2">
               <Button 
-                variant="outline" 
+                variant="outline"
                 onClick={() => {
                   setIsEditing(false);
                   // Reset form
-                  if (user) {
+                  if (profileData) {
                     setEditForm({
-                      displayName: user.name || "",
-                      jobTitle: user.profile?.jobTitle || "",
-                      location: user.profile?.location || "",
-                      skills: user.profile?.skills || [],
-                      experience: user.profile?.experience || "",
-                      bio: user.profile?.bio || ""
+                      name: profileData.name || "",
+                      jobTitle: profileData.jobTitle || "",
+                      location: profileData.location || "",
+                      skills: profileData.skills || [],
+                      experience: profileData.experience || "",
+                      bio: profileData.bio || ""
                     });
                   }
                 }}
@@ -273,21 +278,21 @@ export function ProfileOverviewPage() {
             <User className="w-5 h-5" />
             Profile Information
           </CardTitle>
-          <CardDescription>Your personal and professional details</CardDescription>
+          <CardDescription>Your personal and professional details (stored securely)</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-start gap-6">
             {/* Profile Picture */}
             <div className="flex flex-col items-center gap-3">
               <div className="w-24 h-24 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-                {user?.photoURL ? (
+                {(profileData as any)?.profilePicture ? (
                   <img 
-                    src={user.photoURL} 
-                    alt={user.name || "User"} 
+                    src={(profileData as any).profilePicture} 
+                    alt={profileData?.name || "User"} 
                     className="w-24 h-24 rounded-full object-cover"
                   />
                 ) : (
-                  (user?.name || user?.email || "U").charAt(0).toUpperCase()
+                  (profileData?.name || profileData?.email || "U").charAt(0).toUpperCase()
                 )}
               </div>
               {isEditing && (
@@ -305,8 +310,8 @@ export function ProfileOverviewPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input
                       label="Full Name"
-                      value={editForm.displayName}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, displayName: e.target.value }))}
+                      value={editForm.name}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="Enter your full name"
                     />
                     <Input
@@ -345,32 +350,32 @@ export function ProfileOverviewPage() {
                 <div className="space-y-3">
                   <div>
                     <div className="text-xs text-secondary mb-1">Full Name</div>
-                    <div className="text-lg font-semibold text-primary">{user?.name || "Not set"}</div>
+                    <div className="text-lg font-semibold text-primary">{profileData?.name || "Not set"}</div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <div className="text-xs text-secondary mb-1">Email</div>
-                      <div className="text-sm text-primary">{user?.email}</div>
+                      <div className="text-sm text-primary">{profileData?.email}</div>
                     </div>
                     <div>
                       <div className="text-xs text-secondary mb-1">Job Title</div>
-                      <div className="text-sm text-primary">{user?.profile?.jobTitle || "Not set"}</div>
+                      <div className="text-sm text-primary">{(profileData as any)?.jobTitle || "Not set"}</div>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <div className="text-xs text-secondary mb-1">Location</div>
-                      <div className="text-sm text-primary">{user?.profile?.location || "Not set"}</div>
+                      <div className="text-sm text-primary">{(profileData as any)?.location || "Not set"}</div>
                     </div>
                     <div>
                       <div className="text-xs text-secondary mb-1">Experience</div>
-                      <div className="text-sm text-primary">{user?.profile?.experience || "Not set"}</div>
+                      <div className="text-sm text-primary">{(profileData as any)?.experience || "Not set"}</div>
                     </div>
                   </div>
-                  {user?.profile?.bio && (
+                  {(profileData as any)?.bio && (
                     <div>
                       <div className="text-xs text-secondary mb-1">Bio</div>
-                      <div className="text-sm text-primary">{user.profile.bio}</div>
+                      <div className="text-sm text-primary">{(profileData as any).bio}</div>
                     </div>
                   )}
                 </div>
@@ -421,8 +426,8 @@ export function ProfileOverviewPage() {
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {(user?.profile?.skills || []).length > 0 ? (
-                user?.profile?.skills?.map((skill, index) => (
+              {currentSkills.length > 0 ? (
+                currentSkills.map((skill, index) => (
                   <span
                     key={index}
                     className="px-3 py-1 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 text-sm font-medium"
@@ -458,7 +463,7 @@ export function ProfileOverviewPage() {
                 className="block w-full text-sm text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/30 dark:file:text-brand-400"
               />
               <p className="text-xs text-tertiary mt-1">
-                Supported formats: PDF, DOC, DOCX, TXT (Max 10MB) • Optimized for paraphrasing analysis
+                Supported formats: PDF, DOC, DOCX, TXT (Max 10MB) • Stored securely in Firebase
               </p>
             </div>
 
@@ -471,7 +476,7 @@ export function ProfileOverviewPage() {
                   disabled={uploadingCv || uploadCvMutation.isPending}
                   className="ml-auto"
                 >
-                  {uploadingCv || uploadCvMutation.isPending ? "Analyzing..." : "Upload & Analyze for Paraphrasing"}
+                  {uploadingCv || uploadCvMutation.isPending ? "Analyzing..." : "Upload & Analyze"}
                 </Button>
               </div>
             )}
@@ -489,10 +494,10 @@ export function ProfileOverviewPage() {
                       CV Ready for Paraphrasing
                     </div>
                     <div className="text-xs text-green-600 dark:text-green-500">
-                      Status: {cv.analysis_status} • Uploaded: {new Date(cv.uploaded_at).toLocaleDateString()}
+                      Status: {cv.analysisStatus} • Uploaded: {cv.uploadedAt.toDate().toLocaleDateString()}
                     </div>
                     <div className="text-xs text-green-600 dark:text-green-500 mt-1">
-                      ✓ Paraphrasing analysis complete • Ready for job-specific optimization
+                      ✓ Securely stored in Firebase • Ready for job-specific optimization
                     </div>
                   </div>
                   <Button size="sm" variant="outline" onClick={() => navigate("/dashboard")}>
@@ -509,7 +514,7 @@ export function ProfileOverviewPage() {
                   Upload your CV to enable AI-powered paraphrasing for different job applications
                 </div>
                 <div className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">
-                  💡 Our AI will analyze your CV structure and prepare it for job-specific optimization
+                  💡 Your data will be securely stored and never shared with third parties
                 </div>
               </div>
             )}

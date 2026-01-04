@@ -13,12 +13,12 @@ class JSearchService:
     """Service for interacting with JSearch API via RapidAPI"""
     
     def __init__(self):
-        self.api_key = os.getenv("JSEARCH_API_KEY")
-        self.api_host = os.getenv("JSEARCH_API_HOST", "jsearch.p.rapidapi.com")
+        self.api_key = os.getenv("RAPIDAPI_KEY")
+        self.api_host = os.getenv("RAPIDAPI_HOST", "jsearch.p.rapidapi.com")
         self.base_url = os.getenv("JSEARCH_URL", "https://jsearch.p.rapidapi.com")
         
         if not self.api_key:
-            logger.warning("JSEARCH_API_KEY not found in environment variables")
+            logger.warning("RAPIDAPI_KEY not found in environment variables")
         else:
             logger.info("JSearch API initialized successfully")
     

@@ -3,7 +3,6 @@ import { useNavigate, NavLink } from "react-router-dom";
 import { Button } from "../../../shared/components/ui/Button";
 import { Input } from "../../../shared/components/ui/Input";
 import { useAuth } from "../hooks/useAuth";
-import { firebaseAuthService } from "../../../services/firebaseAuth";
 
 export function RegisterPage() {
   const { register, loginWithGoogle, loginWithGitHub } = useAuth();
@@ -19,56 +18,18 @@ export function RegisterPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isGitHubLoading, setIsGitHubLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [passwordValidation, setPasswordValidation] = useState<{
-    isValid: boolean;
-    requirements: string[];
-  }>({ isValid: false, requirements: [] });
 
-  const validatePasswordStrength = async (password: string) => {
-    if (!password) {
-      setPasswordValidation({ isValid: false, requirements: [] });
-      return;
-    }
-
-    try {
-      const validation = await firebaseAuthService.validatePassword(password);
-      const requirements: string[] = [];
-
-      if (validation.containsLowercaseLetter === false) {
-        requirements.push("Include lowercase letters");
-      }
-      if (validation.containsUppercaseLetter === false) {
-        requirements.push("Include uppercase letters");
-      }
-      if (validation.containsNumericCharacter === false) {
-        requirements.push("Include numbers");
-      }
-      if (validation.containsNonAlphanumericCharacter === false) {
-        requirements.push("Include special characters");
-      }
-      if (validation.meetsMinPasswordLength === false) {
-        requirements.push("At least 6 characters long");
-      }
-
-      setPasswordValidation({
-        isValid: validation.isValid,
-        requirements
-      });
-    } catch (err) {
-      // Fallback validation
-      console.error("Password validation error:", err);
-      const requirements: string[] = [];
-      if (password.length < 6) requirements.push("At least 6 characters long");
-      if (!/[a-z]/.test(password)) requirements.push("Include lowercase letters");
-      if (!/[A-Z]/.test(password)) requirements.push("Include uppercase letters");
-      if (!/\d/.test(password)) requirements.push("Include numbers");
-      if (!/[^a-zA-Z0-9]/.test(password)) requirements.push("Include special characters");
-
-      setPasswordValidation({
-        isValid: requirements.length === 0,
-        requirements
-      });
-    }
+  const validatePassword = (password: string) => {
+    const requirements: string[] = [];
+    if (password.length < 6) requirements.push("At least 6 characters long");
+    if (!/[a-z]/.test(password)) requirements.push("Include lowercase letters");
+    if (!/[A-Z]/.test(password)) requirements.push("Include uppercase letters");
+    if (!/\d/.test(password)) requirements.push("Include numbers");
+    
+    return {
+      isValid: requirements.length === 0,
+      requirements
+    };
   };
 
   const onSubmit = async (e: FormEvent) => {
@@ -82,8 +43,9 @@ export function RegisterPage() {
       return;
     }
 
+    const passwordValidation = validatePassword(formData.password);
     if (!passwordValidation.isValid) {
-      setError("Password does not meet security requirements");
+      setError(`Password requirements: ${passwordValidation.requirements.join(", ")}`);
       setIsSubmitting(false);
       return;
     }
@@ -93,7 +55,7 @@ export function RegisterPage() {
       navigate("/dashboard", { replace: true });
     } catch (err: any) {
       console.error("Registration error:", err);
-      setError(getErrorMessage(err));
+      setError(err.message || "Registration failed");
     } finally {
       setIsSubmitting(false);
     }
@@ -130,22 +92,6 @@ export function RegisterPage() {
   };
 
   const getErrorMessage = (error: any): string => {
-    if (error.code) {
-      switch (error.code) {
-        case "auth/email-already-in-use":
-          return "An account with this email already exists.";
-        case "auth/invalid-email":
-          return "Invalid email address.";
-        case "auth/weak-password":
-          return "Password is too weak. Please choose a stronger password.";
-        case "auth/popup-closed-by-user":
-          return "Sign-up was cancelled.";
-        case "auth/popup-blocked":
-          return "Pop-up was blocked. Please allow pop-ups and try again.";
-        default:
-          return error.message || "An error occurred during registration.";
-      }
-    }
     return error.message || "An error occurred during registration.";
   };
 
@@ -190,24 +136,30 @@ export function RegisterPage() {
             value={formData.password}
             onChange={(e) => {
               setFormData({ ...formData, password: e.target.value });
-              validatePasswordStrength(e.target.value);
             }}
           />
           {formData.password && (
             <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
-              <p className={`text-xs font-medium ${passwordValidation.isValid ? 'text-green-600' : 'text-orange-600'}`}>
-                {passwordValidation.isValid ? '✓ Password meets all requirements' : 'Password requirements:'}
-              </p>
-              {!passwordValidation.isValid && (
-                <ul className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                  {passwordValidation.requirements.map((req, index) => (
-                    <li key={index} className="flex items-center">
-                      <span className="mr-1">•</span>
-                      {req}
-                    </li>
-                  ))}
-                </ul>
-              )}
+              {(() => {
+                const validation = validatePassword(formData.password);
+                return (
+                  <>
+                    <p className={`text-xs font-medium ${validation.isValid ? 'text-green-600' : 'text-orange-600'}`}>
+                      {validation.isValid ? '✓ Password meets all requirements' : 'Password requirements:'}
+                    </p>
+                    {!validation.isValid && (
+                      <ul className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                        {validation.requirements.map((req, index) => (
+                          <li key={index} className="flex items-center">
+                            <span className="mr-1">•</span>
+                            {req}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           )}
         </div>

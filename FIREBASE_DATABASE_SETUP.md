@@ -1,211 +1,209 @@
 # Firebase Database Setup Instructions
 
-This guide will help you set up Firebase Firestore database for the AI Career Guide application.
+This guide will help you set up Firebase Firestore database for the AI Career Guide platform to store real user data instead of using mock data.
 
-## 1. Firebase Project Setup
+## Prerequisites
 
-### Step 1: Create Firebase Project
+- Firebase project already created (cloudproject-22b3b)
+- Firebase Authentication already configured
+- Admin access to Firebase Console
+
+## Step 1: Enable Firestore Database
+
 1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Click "Create a project" or "Add project"
-3. Enter project name: `ai-career-guide` (or your preferred name)
-4. Enable Google Analytics (optional but recommended)
-5. Click "Create project"
+2. Select your project: `cloudproject-22b3b`
+3. In the left sidebar, click on **Firestore Database**
+4. Click **Create database**
+5. Choose **Start in test mode** (for development)
+6. Select your preferred location (choose closest to your users)
+7. Click **Done**
 
-### Step 2: Enable Authentication
-1. In Firebase Console, go to **Authentication** → **Sign-in method**
-2. Enable the following providers:
-   - **Email/Password**: Click "Enable" → Save
-   - **Google**: Click "Enable" → Add your domain → Save
-   - **GitHub**: Click "Enable" → Add OAuth App credentials → Save
+## Step 2: Configure Firestore Security Rules
 
-### Step 3: Create Firestore Database
-1. Go to **Firestore Database** → **Create database**
-2. Choose **Start in test mode** (for development)
-3. Select your preferred location (choose closest to your users)
-4. Click "Done"
-
-## 2. Database Structure
-
-### Collections and Documents
-
-#### 2.1 Users Collection (`users`)
-```
-users/
-├── {userId}/
-    ├── uid: string
-    ├── email: string
-    ├── displayName: string
-    ├── photoURL?: string
-    ├── createdAt: timestamp
-    ├── lastLoginAt: timestamp
-    ├── profileComplete: boolean
-    ├── jobTitle?: string
-    ├── location?: string
-    ├── skills?: string[]
-    ├── experience?: string
-    ├── bio?: string
-```
-
-#### 2.2 CV Analysis Collection (`cvAnalyses`)
-```
-cvAnalyses/
-├── {cvId}/
-    ├── userId: string
-    ├── filename: string
-    ├── uploadedAt: timestamp
-    ├── analysisStatus: string
-    ├── extractedText: string
-    ├── aiAnalysis: object
-    ├── basicAnalysis: object
-```
-
-#### 2.3 Job Applications Collection (`jobApplications`)
-```
-jobApplications/
-├── {applicationId}/
-    ├── userId: string
-    ├── jobTitle: string
-    ├── company: string
-    ├── appliedAt: timestamp
-    ├── status: string
-    ├── notes?: string
-```
-
-#### 2.4 User Activity Collection (`userActivity`)
-```
-userActivity/
-├── {activityId}/
-    ├── userId: string
-    ├── action: string
-    ├── timestamp: timestamp
-    ├── metadata: object
-```
-
-## 3. Firestore Security Rules
-
-### Step 1: Set Security Rules
-1. Go to **Firestore Database** → **Rules**
-2. Replace the default rules with:
+Replace the default rules with these production-ready rules:
 
 ```javascript
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users can read and write their own data
+    // Users can only access their own data
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // CV analyses - users can only access their own
-    match /cvAnalyses/{cvId} {
+    // CVs - users can only access their own CVs
+    match /cvs/{cvId} {
       allow read, write: if request.auth != null && 
-        request.auth.uid == resource.data.userId;
+        resource.data.userId == request.auth.uid;
       allow create: if request.auth != null && 
-        request.auth.uid == request.resource.data.userId;
+        request.resource.data.userId == request.auth.uid;
     }
     
-    // Job applications - users can only access their own
-    match /jobApplications/{applicationId} {
+    // Job Applications - users can only access their own applications
+    match /applications/{applicationId} {
       allow read, write: if request.auth != null && 
-        request.auth.uid == resource.data.userId;
+        resource.data.userId == request.auth.uid;
       allow create: if request.auth != null && 
-        request.auth.uid == request.resource.data.userId;
+        request.resource.data.userId == request.auth.uid;
     }
     
-    // User activity - users can only access their own
-    match /userActivity/{activityId} {
-      allow read, write: if request.auth != null && 
-        request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null && 
-        request.auth.uid == request.resource.data.userId;
+    // Analytics - users can only access their own analytics
+    match /analytics/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // News articles - read-only for all authenticated users
+    match /news/{articleId} {
+      allow read: if request.auth != null;
+    }
+    
+    // Job market data - read-only for all authenticated users
+    match /job_market/{dataId} {
+      allow read: if request.auth != null;
     }
   }
 }
 ```
 
-3. Click **Publish**
+## Step 3: Enable Firebase Storage
 
-## 4. Firestore Indexes
+1. In Firebase Console, go to **Storage**
+2. Click **Get started**
+3. Choose **Start in test mode**
+4. Select the same location as your Firestore database
+5. Click **Done**
 
-### Step 1: Create Composite Indexes
-1. Go to **Firestore Database** → **Indexes**
-2. Create the following indexes:
+## Step 4: Configure Storage Security Rules
 
-#### CV Analyses Index
-- Collection: `cvAnalyses`
-- Fields: 
+Replace the default storage rules:
+
+```javascript
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // CV files - users can only upload/access their own CVs
+    match /cvs/{fileName} {
+      allow read, write: if request.auth != null && 
+        fileName.matches('cv_' + request.auth.uid + '_.*');
+    }
+    
+    // Profile pictures - users can only upload/access their own pictures
+    match /profile_pictures/{fileName} {
+      allow read, write: if request.auth != null && 
+        fileName.matches('profile_' + request.auth.uid + '_.*');
+    }
+  }
+}
+```
+
+## Step 5: Create Database Collections
+
+The following collections will be automatically created when data is first written, but you can create them manually for better organization:
+
+### Collections Structure:
+
+1. **users** - User profiles and personal information
+   ```
+   users/{userId}
+   ├── uid: string
+   ├── email: string
+   ├── name: string
+   ├── jobTitle?: string
+   ├── location?: string
+   ├── bio?: string
+   ├── skills: string[]
+   ├── experience?: string
+   ├── profilePicture?: string
+   ├── createdAt: timestamp
+   ├── updatedAt: timestamp
+   └── profileCompleteness: number
+   ```
+
+2. **cvs** - CV files and analysis data
+   ```
+   cvs/{cvId}
+   ├── userId: string
+   ├── fileName: string
+   ├── fileUrl: string
+   ├── analysisStatus: string
+   ├── uploadedAt: timestamp
+   └── analysis?: object
+   ```
+
+3. **applications** - Job application tracking
+   ```
+   applications/{applicationId}
+   ├── userId: string
+   ├── jobId: string
+   ├── jobTitle: string
+   ├── company: string
+   ├── appliedAt: timestamp
+   ├── status: string
+   └── notes?: string
+   ```
+
+4. **analytics** - User analytics and metrics
+   ```
+   analytics/{userId}
+   ├── userId: string
+   ├── profileViews: number
+   ├── applicationsCount: number
+   ├── skillsMatchScore: number
+   ├── lastActive: timestamp
+   └── careerLevel: string
+   ```
+
+## Step 6: Create Composite Indexes
+
+For better query performance, create these indexes in Firestore:
+
+1. Go to **Firestore Database** > **Indexes** tab
+2. Click **Create Index**
+3. Create the following indexes:
+
+### CVs Collection Index:
+- Collection ID: `cvs`
+- Fields:
   - `userId` (Ascending)
   - `uploadedAt` (Descending)
 
-#### Job Applications Index
-- Collection: `jobApplications`
+### Applications Collection Index:
+- Collection ID: `applications`
 - Fields:
   - `userId` (Ascending)
   - `appliedAt` (Descending)
 
-#### User Activity Index
-- Collection: `userActivity`
+### Applications Status Index:
+- Collection ID: `applications`
 - Fields:
   - `userId` (Ascending)
-  - `timestamp` (Descending)
+  - `status` (Ascending)
+  - `appliedAt` (Descending)
 
-## 5. Environment Configuration
+## Step 7: Update Environment Variables
 
-### Step 1: Get Firebase Config
-1. Go to **Project Settings** (gear icon)
-2. Scroll to "Your apps" section
-3. Click "Web app" icon (`</>`)
-4. Register app name: `ai-career-guide-web`
-5. Copy the config object
-
-### Step 2: Update Environment Variables
-Update your `frontend/.env` file:
+Make sure your `.env` file in the frontend directory has the correct Firebase configuration:
 
 ```env
-# Firebase Configuration
-VITE_FIREBASE_API_KEY=your_api_key_here
-VITE_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
-VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
+VITE_FIREBASE_API_KEY=your-api-key
+VITE_FIREBASE_AUTH_DOMAIN=cloudproject-22b3b.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=cloudproject-22b3b
+VITE_FIREBASE_STORAGE_BUCKET=cloudproject-22b3b.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+VITE_FIREBASE_APP_ID=your-app-id
 ```
 
-## 6. Initial Data Setup (Optional)
+## Step 8: Test Database Connection
 
-### Step 1: Create Sample Data
-You can add sample data through the Firebase Console:
+1. Start your development server
+2. Register a new user or login with existing account
+3. Update your profile information
+4. Upload a CV file
+5. Check Firebase Console to verify data is being stored
 
-1. Go to **Firestore Database** → **Data**
-2. Click "Start collection"
-3. Collection ID: `users`
-4. Add sample user document with your user ID
+## Step 9: Production Considerations
 
-## 7. Testing the Setup
-
-### Step 1: Test Authentication
-1. Start your application: `npm run dev`
-2. Try registering a new account
-3. Check Firebase Console → **Authentication** → **Users**
-4. Verify user appears in the list
-
-### Step 2: Test Database Writes
-1. Complete user registration
-2. Edit your profile in the app
-3. Check Firebase Console → **Firestore Database** → **Data**
-4. Verify user document was created in `users` collection
-
-### Step 3: Test CV Upload
-1. Upload a CV in the profile section
-2. Check that `cvAnalyses` collection is created
-3. Verify CV analysis data is stored
-
-## 8. Production Considerations
-
-### Security Rules for Production
-Before going to production, update security rules to be more restrictive:
-
+### Security Rules for Production:
 ```javascript
 rules_version = '2';
 service cloud.firestore {
@@ -218,61 +216,86 @@ service cloud.firestore {
     }
     
     // Add rate limiting and validation rules
-    match /cvAnalyses/{cvId} {
-      allow read, write: if request.auth != null && 
-        request.auth.uid == resource.data.userId &&
-        request.auth.token.email_verified == true;
+    match /applications/{applicationId} {
       allow create: if request.auth != null && 
-        request.auth.uid == request.resource.data.userId &&
-        request.auth.token.email_verified == true &&
-        // Limit CV uploads per day
-        request.time > resource.data.lastUpload + duration.value(1, 'd');
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.keys().hasAll(['jobId', 'jobTitle', 'company']) &&
+        request.resource.data.jobTitle is string &&
+        request.resource.data.jobTitle.size() > 0;
     }
   }
 }
 ```
 
-### Backup Strategy
+### Backup Strategy:
 1. Enable automatic backups in Firebase Console
 2. Set up Cloud Functions for data validation
-3. Monitor usage and costs
+3. Implement data export functionality
 
-## 9. Troubleshooting
+### Monitoring:
+1. Set up Firebase Performance Monitoring
+2. Enable Firestore usage alerts
+3. Monitor storage usage and costs
 
-### Common Issues
+## Troubleshooting
 
-#### Authentication Not Working
-- Check if authentication providers are enabled
-- Verify environment variables are correct
-- Check browser console for errors
+### Common Issues:
 
-#### Database Permission Denied
-- Verify security rules are published
-- Check if user is authenticated
-- Ensure user ID matches in rules
+1. **Permission Denied Errors**
+   - Check security rules
+   - Verify user authentication
+   - Ensure user email is verified
 
-#### Data Not Saving
-- Check network connectivity
-- Verify Firestore rules allow writes
-- Check browser console for errors
+2. **Index Errors**
+   - Create required composite indexes
+   - Wait for index creation to complete
 
-### Debug Tools
-1. Firebase Console → **Firestore Database** → **Usage**
-2. Browser Developer Tools → **Network** tab
-3. Firebase Console → **Authentication** → **Users**
+3. **Storage Upload Failures**
+   - Check storage security rules
+   - Verify file size limits
+   - Check network connectivity
 
-## 10. Next Steps
+### Testing Commands:
 
-After setup is complete:
-1. Test all authentication flows
-2. Verify profile editing works
-3. Test CV upload and analysis
-4. Monitor database usage
-5. Set up monitoring and alerts
+```bash
+# Test Firestore connection
+npm run test:firestore
+
+# Test Storage upload
+npm run test:storage
+
+# Validate security rules
+firebase emulators:start --only firestore
+```
+
+## Data Migration
+
+If you have existing mock data, use this script to migrate to Firebase:
+
+```javascript
+// migration-script.js
+import { firebaseService } from './src/services/firebaseService';
+
+async function migrateUserData() {
+  const users = JSON.parse(localStorage.getItem('users') || '[]');
+  
+  for (const user of users) {
+    await firebaseService.saveUserProfile(user);
+    console.log(`Migrated user: ${user.email}`);
+  }
+}
+
+// Run migration
+migrateUserData();
+```
 
 ## Support
 
-If you encounter issues:
-1. Check [Firebase Documentation](https://firebase.google.com/docs)
-2. Review [Firestore Security Rules](https://firebase.google.com/docs/firestore/security/get-started)
-3. Check [Firebase Console](https://console.firebase.google.com/) for error logs
+For additional help:
+- [Firebase Documentation](https://firebase.google.com/docs/firestore)
+- [Firestore Security Rules](https://firebase.google.com/docs/firestore/security/get-started)
+- [Firebase Storage Documentation](https://firebase.google.com/docs/storage)
+
+---
+
+**Note**: This setup provides a production-ready database structure for the AI Career Guide platform. All user data will be securely stored and properly isolated per user.

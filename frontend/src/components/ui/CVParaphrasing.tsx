@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../shared/components/ui/Card";
 import { Button } from "../../shared/components/ui/Button";
 import { Input } from "../../shared/components/ui/Input";
+import { cvService } from "../../services/cvService";
 import { FileText, Wand2, Copy, Download, CheckCircle } from "lucide-react";
 
 interface ParaphrasingResult {
@@ -44,21 +45,11 @@ export function CVParaphrasing() {
 
   const paraphraseMutation = useMutation({
     mutationFn: async (data: { jobTitle: string; jobDescription?: string; companyName?: string }) => {
-      const formData = new FormData();
-      formData.append("job_title", data.jobTitle);
-      if (data.jobDescription) formData.append("job_description", data.jobDescription);
-      if (data.companyName) formData.append("company_name", data.companyName);
-
-      const response = await fetch("/api/v1/users/me/cv/paraphrase", {
-        method: "POST",
-        body: formData,
+      return await cvService.paraphraseCV({
+        job_title: data.jobTitle,
+        job_description: data.jobDescription,
+        company_name: data.companyName,
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to paraphrase CV");
-      }
-
-      return response.json();
     },
     onSuccess: (data) => {
       setResult(data);

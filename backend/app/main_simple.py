@@ -38,6 +38,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:5174",
+        "http://localhost:5175",
         "https://yourdomain.com"
     ],
     allow_credentials=True,
@@ -1651,3 +1652,234 @@ if __name__ == "__main__":
         port=8000,
         reload=True
     )
+
+# Job Search endpoints using JSearch API
+@app.get("/api/v1/jobs/search")
+async def search_jobs(
+    query: str = "software developer",
+    location: Optional[str] = None,
+    remote_jobs_only: bool = False,
+    employment_types: Optional[str] = None,
+    job_requirements: Optional[str] = None,
+    page: int = 1,
+    limit: int = 10
+):
+    """Search for real job listings using JSearch API"""
+    try:
+        # Import the JSearch service
+        import sys
+        import os
+        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+        from services.jsearch_service import jsearch_service
+        
+        # Calculate num_pages based on limit
+        num_pages = max(1, min(3, (limit + 9) // 10))  # Max 3 pages, 10 jobs per page
+        
+        result = await jsearch_service.search_jobs(
+            query=query,
+            location=location,
+            remote_jobs_only=remote_jobs_only,
+            employment_types=employment_types,
+            job_requirements=job_requirements,
+            page=page,
+            num_pages=num_pages
+        )
+        
+        if result["status"] == "error":
+            raise HTTPException(status_code=400, detail=result["message"])
+        
+        # Limit results to requested amount
+        jobs = result["data"][:limit] if result["data"] else []
+        
+        return {
+            "success": True,
+            "message": result["message"],
+            "jobs": jobs,
+            "total_results": len(jobs),
+            "parameters": result.get("parameters", {}),
+            "page": page,
+            "limit": limit,
+            "api_source": "JSearch API"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Job search error: {str(e)}")
+        # Fallback to mock data
+        mock_jobs = [
+            {
+                "id": "mock_job_1",
+                "title": f"{query.title()} Position",
+                "company": "Tech Company Inc",
+                "location": location or "Remote",
+                "description": f"Exciting {query} opportunity with competitive salary and benefits.",
+                "employment_type": "FULLTIME",
+                "remote": remote_jobs_only,
+                "salary": {"min": 80000, "max": 120000, "currency": "USD", "period": "YEARLY"},
+                "posted_date": datetime.utcnow().isoformat(),
+                "apply_url": "https://example.com/apply",
+                "source": "Mock Data",
+                "company_logo": "https://via.placeholder.com/100x100?text=Company",
+                "created_at": datetime.utcnow().isoformat()
+            },
+            {
+                "id": "mock_job_2", 
+                "title": f"Senior {query.title()}",
+                "company": "Innovation Labs",
+                "location": location or "San Francisco, CA",
+                "description": f"Senior level {query} role with leadership opportunities.",
+                "employment_type": "FULLTIME",
+                "remote": remote_jobs_only,
+                "salary": {"min": 120000, "max": 160000, "currency": "USD", "period": "YEARLY"},
+                "posted_date": datetime.utcnow().isoformat(),
+                "apply_url": "https://example.com/apply",
+                "source": "Mock Data",
+                "company_logo": "https://via.placeholder.com/100x100?text=Labs",
+                "created_at": datetime.utcnow().isoformat()
+            }
+        ]
+        
+        return {
+            "success": True,
+            "message": f"Found {len(mock_jobs)} mock job listings (JSearch API unavailable)",
+            "jobs": mock_jobs[:limit],
+            "total_results": len(mock_jobs),
+            "parameters": {"query": query, "location": location},
+            "page": page,
+            "limit": limit,
+            "api_source": "Mock Data",
+            "error": str(e)
+        }
+
+@app.get("/api/v1/jobs/details/{job_id}")
+async def get_job_details(job_id: str):
+    """Get detailed information for a specific job"""
+    try:
+        # Import the JSearch service
+        import sys
+        import os
+        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+        from services.jsearch_service import jsearch_service
+        
+        result = await jsearch_service.get_job_details(job_id)
+        
+        if result["status"] == "error":
+            raise HTTPException(status_code=400, detail=result["message"])
+        
+        return {
+            "success": True,
+            "message": result["message"],
+            "job": result["data"]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Job details error: {str(e)}")
+        # Return mock job details
+        return {
+            "success": True,
+            "message": "Mock job details (JSearch API unavailable)",
+            "job": {
+                "id": job_id,
+                "title": "Software Developer",
+                "company": "Tech Company",
+                "location": "Remote",
+                "description": "Full job description would be here...",
+                "requirements": ["Python", "React", "3+ years experience"],
+                "benefits": ["Health insurance", "401k", "Remote work"],
+                "salary": {"min": 90000, "max": 130000, "currency": "USD"},
+                "posted_date": datetime.utcnow().isoformat(),
+                "source": "Mock Data"
+            },
+            "error": str(e)
+        }
+
+@app.get("/api/v1/jobs/suggestions")
+async def get_job_suggestions(
+    skills: Optional[str] = None,
+    experience_level: Optional[str] = None,
+    location: Optional[str] = None,
+    remote_preference: bool = False
+):
+    """Get job suggestions based on user profile and preferences"""
+    try:
+        # Import the JSearch service
+        import sys
+        import os
+        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+        from services.jsearch_service import jsearch_service
+        
+        # Build search query based on user preferences
+        query_parts = []
+        
+        if skills:
+            # Use the first few skills for the search query
+            skill_list = [skill.strip() for skill in skills.split(",")]
+            query_parts.extend(skill_list[:3])  # Use top 3 skills
+        
+        if experience_level:
+            if experience_level.lower() == "entry":
+                query_parts.append("entry level")
+            elif experience_level.lower() == "senior":
+                query_parts.append("senior")
+        
+        # Default to "developer" if no specific query
+        if not query_parts:
+            query_parts = ["developer"]
+        
+        search_query = " ".join(query_parts)
+        
+        result = await jsearch_service.search_jobs(
+            query=search_query,
+            location=location,
+            remote_jobs_only=remote_preference,
+            page=1,
+            num_pages=1
+        )
+        
+        if result["status"] == "error":
+            raise HTTPException(status_code=400, detail=result["message"])
+        
+        return {
+            "success": True,
+            "message": "Job suggestions generated successfully",
+            "suggestions": result["data"][:10],  # Return top 10 suggestions
+            "search_query": search_query,
+            "total_found": result["total_results"]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Job suggestions error: {str(e)}")
+        # Return mock suggestions
+        return {
+            "success": True,
+            "message": "Mock job suggestions (JSearch API unavailable)",
+            "suggestions": [
+                {
+                    "id": "suggestion_1",
+                    "title": "Frontend Developer",
+                    "company": "StartupXYZ",
+                    "location": location or "Remote",
+                    "match_score": 0.9,
+                    "source": "Mock Data"
+                },
+                {
+                    "id": "suggestion_2", 
+                    "title": "Full Stack Engineer",
+                    "company": "TechCorp",
+                    "location": location or "San Francisco, CA",
+                    "match_score": 0.85,
+                    "source": "Mock Data"
+                }
+            ],
+            "search_query": skills or "developer",
+            "total_found": 2,
+            "error": str(e)
+        }
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
