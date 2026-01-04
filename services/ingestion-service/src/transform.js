@@ -86,9 +86,16 @@ export function transformJobs(
             employer_website: safeString(job?.employer_website || job?.company_url || job?.website),
             job_publisher: safeString(job?.job_publisher || job?.publisher),
             job_employment_type: safeString(job?.job_employment_type || job?.employment_type),
-            job_employment_types: Array.isArray(job?.job_employment_types)
-                ? job.job_employment_types.map(safeString).filter(Boolean).join(', ')
-                : safeString(job?.job_employment_types),
+            job_employment_types: (() => {
+                const value = job?.job_employment_types;
+                if (Array.isArray(value)) {
+                    return value.map(safeString).filter(Boolean);
+                } else if (typeof value === 'string') {
+                    // Split comma-separated string into array (e.g., "FULLTIME, PARTTIME" -> ["FULLTIME", "PARTTIME"])
+                    return value.split(',').map(s => safeString(s.trim())).filter(Boolean);
+                }
+                return null;
+            })(),
             job_apply_link: safeString(job?.job_apply_link || job?.apply_link || job?.applyUrl),
             job_apply_is_direct: safeBoolean(job?.job_apply_is_direct),
             apply_options: job?.apply_options ?? null,
@@ -103,9 +110,16 @@ export function transformJobs(
             job_country: safeString(job?.job_country || job?.country),
             job_latitude: safeFloat(job?.job_latitude || job?.latitude),
             job_longitude: safeFloat(job?.job_longitude || job?.longitude),
-            job_benefits: Array.isArray(job?.job_benefits)
-                ? job.job_benefits.map(safeString).filter(Boolean).join(', ')
-                : safeString(job?.job_benefits),
+            job_benefits: (() => {
+                const value = job?.job_benefits;
+                if (Array.isArray(value)) {
+                    return value.map(safeString).filter(Boolean);
+                } else if (typeof value === 'string') {
+                    // Split comma-separated string into array (e.g., "Health, Dental" -> ["Health", "Dental"])
+                    return value.split(',').map(s => safeString(s.trim())).filter(Boolean);
+                }
+                return null;
+            })(),
             job_google_link: safeString(job?.job_google_link),
             job_salary: safeString(job?.job_salary || job?.salary),
             job_min_salary: safeFloat(job?.job_min_salary || job?.min_salary),
@@ -118,69 +132,4 @@ export function transformJobs(
             raw_json: job
         };
     });
-
-
-
-
 }
-
-// export function transformEvents(
-//     events,
-//     { searchQuery, country, language, page = null, numPages = null, requestId = null, status = null, statusCode = 200 }
-// ) {
-//     const ingestedAt = new Date().toISOString();
-
-//     return jobs.map((job) => {
-//         const jobDescription = truncate(safeString(job?.body || job?.job_description || job?.description), 10000);
-
-//         return {
-//             ingested_at: ingestedAt,
-//             request_id: safeString(requestId || job?.request_id),
-//             status: safeString(status || job?.status || (statusCode ? String(statusCode) : null)),
-//             search_query: safeString(searchQuery),
-//             page: safeInteger(page),
-//             num_pages: safeInteger(numPages),
-//             country: safeString(country),
-//             language: safeString(language || job?.language || job?.job_language),
-//             date_posted: formatDateString(job?.date_posted),
-//             work_from_home: safeBoolean(job?.work_from_home),
-//             job_id: safeString(job?.job_id || job?.id || job?.jobId),
-//             job_title: safeString(job?.job_title || job?.title),
-//             employer_name: safeString(job?.company || job?.employer_name || job?.company_name || job?.employer),
-//             employer_logo: safeString(job?.employer_logo || job?.company_logo || job?.logo),
-//             employer_website: safeString(job?.employer_website || job?.company_url || job?.website),
-//             job_publisher: safeString(job?.job_publisher || job?.publisher),
-//             job_employment_type: safeString(job?.job_employment_type || job?.employment_type),
-//             job_employment_types: Array.isArray(job?.job_employment_types)
-//                 ? job.job_employment_types.map(safeString).filter(Boolean).join(', ')
-//                 : safeString(job?.job_employment_types),
-//             job_apply_link: safeString(job?.job_apply_link || job?.apply_link || job?.applyUrl),
-//             job_apply_is_direct: safeBoolean(job?.job_apply_is_direct),
-//             apply_options: job?.apply_options ?? null,
-//             job_description: jobDescription,
-//             job_is_remote: safeBoolean(job?.job_is_remote || job?.is_remote || job?.remote),
-//             job_posted_at: safeString(job?.job_posted_at || job?.job_posted_at_date || job?.post_date || job?.posted_at),
-//             job_posted_at_timestamp: safeInteger(job?.job_posted_at_timestamp),
-//             job_posted_at_datetime_utc: toTimestampString(job?.job_posted_at_datetime_utc),
-//             job_location: buildLocation(job),
-//             job_city: safeString(job?.job_city || job?.city),
-//             job_state: safeString(job?.job_state || job?.state || job?.region),
-//             job_country: safeString(job?.job_country || job?.country),
-//             job_latitude: safeFloat(job?.job_latitude || job?.latitude),
-//             job_longitude: safeFloat(job?.job_longitude || job?.longitude),
-//             job_benefits: Array.isArray(job?.job_benefits)
-//                 ? job.job_benefits.map(safeString).filter(Boolean).join(', ')
-//                 : safeString(job?.job_benefits),
-//             job_google_link: safeString(job?.job_google_link),
-//             job_salary: safeString(job?.job_salary || job?.salary),
-//             job_min_salary: safeFloat(job?.job_min_salary || job?.min_salary),
-//             job_max_salary: safeFloat(job?.job_max_salary || job?.max_salary),
-//             job_salary_period: safeString(job?.job_salary_period || job?.salary_period),
-//             job_highlights: job?.job_highlights ?? null,
-//             job_onet_soc: safeString(job?.job_onet_soc),
-//             job_onet_job_zone: safeString(job?.job_onet_job_zone),
-//             score: safeFloat(job?.score),
-//             raw_json: job
-//         };
-//     });
-//}

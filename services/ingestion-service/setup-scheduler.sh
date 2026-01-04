@@ -6,7 +6,8 @@
 set -e
 
 PROJECT_ID="job-recommendations-app"
-REGION="europe-north1"
+CLOUD_RUN_REGION="europe-north1"  # Where Cloud Run service is deployed
+SCHEDULER_REGION="europe-west1"   # Where Cloud Scheduler runs (must be valid Scheduler location)
 SERVICE_NAME="ingestion-service"
 SERVICE_URL="https://ingestion-service-608851044020.europe-north1.run.app"
 SERVICE_ACCOUNT="ingestion-run-sa@${PROJECT_ID}.iam.gserviceaccount.com"
@@ -21,14 +22,14 @@ if ! gcloud services list --enabled --project=${PROJECT_ID} | grep -q cloudsched
 fi
 
 # Check if the job already exists
-if gcloud scheduler jobs describe ${SCHEDULER_JOB_NAME} --location=${REGION} --project=${PROJECT_ID} &>/dev/null; then
+if gcloud scheduler jobs describe ${SCHEDULER_JOB_NAME} --location=${SCHEDULER_REGION} --project=${PROJECT_ID} &>/dev/null; then
     echo "Scheduler job '${SCHEDULER_JOB_NAME}' already exists."
     read -p "Do you want to update it? (y/n) " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         UPDATE_MODE="update"
     else
-        echo "Exiting. Use 'gcloud scheduler jobs delete ${SCHEDULER_JOB_NAME} --location=${REGION} --project=${PROJECT_ID}' to delete and recreate."
+        echo "Exiting. Use 'gcloud scheduler jobs delete ${SCHEDULER_JOB_NAME} --location=${SCHEDULER_REGION} --project=${PROJECT_ID}' to delete and recreate."
         exit 0
     fi
 else
@@ -69,9 +70,10 @@ echo ""
 
 if [ "$UPDATE_MODE" == "create" ]; then
     echo "Creating Cloud Scheduler job..."
+    echo "Note: Scheduler in ${SCHEDULER_REGION}, Cloud Run in ${CLOUD_RUN_REGION} (this is fine!)"
     gcloud scheduler jobs create http ${SCHEDULER_JOB_NAME} \
         --project=${PROJECT_ID} \
-        --location=${REGION} \
+        --location=${SCHEDULER_REGION} \
         --schedule="${CRON_SCHEDULE}" \
         --uri="${INGEST_URL}" \
         --http-method=GET \
@@ -80,9 +82,10 @@ if [ "$UPDATE_MODE" == "create" ]; then
         --description="Daily batch ingestion from JSearch API to BigQuery"
 else
     echo "Updating Cloud Scheduler job..."
+    echo "Note: Scheduler in ${SCHEDULER_REGION}, Cloud Run in ${CLOUD_RUN_REGION} (this is fine!)"
     gcloud scheduler jobs update http ${SCHEDULER_JOB_NAME} \
         --project=${PROJECT_ID} \
-        --location=${REGION} \
+        --location=${SCHEDULER_REGION} \
         --schedule="${CRON_SCHEDULE}" \
         --uri="${INGEST_URL}" \
         --http-method=GET \
@@ -95,11 +98,11 @@ echo ""
 echo "Cloud Scheduler job created/updated successfully!"
 echo ""
 echo "To test the job immediately:"
-echo "  gcloud scheduler jobs run ${SCHEDULER_JOB_NAME} --location=${REGION} --project=${PROJECT_ID}"
+echo "  gcloud scheduler jobs run ${SCHEDULER_JOB_NAME} --location=${SCHEDULER_REGION} --project=${PROJECT_ID}"
 echo ""
 echo "To view job details:"
-echo "  gcloud scheduler jobs describe ${SCHEDULER_JOB_NAME} --location=${REGION} --project=${PROJECT_ID}"
+echo "  gcloud scheduler jobs describe ${SCHEDULER_JOB_NAME} --location=${SCHEDULER_REGION} --project=${PROJECT_ID}"
 echo ""
 echo "To list all scheduler jobs:"
-echo "  gcloud scheduler jobs list --location=${REGION} --project=${PROJECT_ID}"
+echo "  gcloud scheduler jobs list --location=${SCHEDULER_REGION} --project=${PROJECT_ID}"
 
