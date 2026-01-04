@@ -8,12 +8,16 @@ import { AuthTestPage } from "../features/auth/pages/AuthTestPage";
 import { SimpleDashboard } from "../features/dashboard/pages/SimpleDashboard";
 import { InjectionPage } from "../features/dashboard/pages/InjectionPage";
 import { QuestionnairePage } from "../features/profile/pages/QuestionnairePage";
+import { ProfileOverviewPage } from "../features/profile/pages/ProfileOverviewPage";
 import { OpportunitiesListPage } from "../features/opportunities/pages/OpportunitiesListPage";
 import { AnalyticsDashboardPage } from "../features/analytics/pages/AnalyticsDashboardPage";
 import { JobSearchPage } from "../features/jobs/pages/JobSearchPage";
+import { CVParaphrasingPage } from "../features/cv/pages/CVParaphrasingPage";
 import { BottomNavDemo } from "../components/demo/BottomNavDemo";
 import { ProtectedRoute } from "../shared/components/auth/ProtectedRoute";
 import { AuthTest } from "../components/test/AuthTest";
+import { FirebaseAuthTest } from "../components/test/FirebaseAuthTest";
+import { SimpleTest } from "../components/test/SimpleTest";
 
 export function AppRoutes() {
   return (
@@ -26,6 +30,12 @@ export function AppRoutes() {
       
       {/* API test page - standalone page */}
       <Route path="/api-test" element={<AuthTest />} />
+
+      {/* Simple test page - standalone page */}
+      <Route path="/simple-test" element={<SimpleTest />} />
+
+      {/* Firebase auth test page - standalone page */}
+      <Route path="/firebase-test" element={<FirebaseAuthTest />} />
 
       {/* Bottom nav demo - standalone page */}
       <Route path="/bottom-nav-demo" element={<BottomNavDemo />} />
@@ -40,6 +50,11 @@ export function AppRoutes() {
       <Route path="/" element={<MainLayout />}>
         <Route index element={<SimpleDashboard />} />
         <Route path="dashboard" element={<SimpleDashboard />} />
+        <Route path="cv-paraphraser" element={
+          <ProtectedRoute>
+            <CVParaphrasingPage />
+          </ProtectedRoute>
+        } />
         <Route path="injection" element={
           <ProtectedRoute>
             <InjectionPage />
@@ -47,7 +62,7 @@ export function AppRoutes() {
         } />
         <Route path="profile" element={
           <ProtectedRoute>
-            <SimpleDashboard />
+            <ProfileOverviewPage />
           </ProtectedRoute>
         } />
         <Route path="questionnaire" element={

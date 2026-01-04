@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Auth Flow Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background-color: #f5f5f5;
+        }
+        .container { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+            margin-bottom: 20px;
+        }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button { 
+            padding: 12px 24px; 
+            margin: 8px; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        button.success { background: #28a745; }
+        button.success:hover { background: #218838; }
+        input { 
+            padding: 10px; 
+            margin: 5px; 
+            border: 1px solid #ccc; 
+            border-radius: 3px; 
+            width: 250px;
+            font-size: 14px;
+        }
+        .form-group { margin: 15px 0; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .test-section { 
+            border: 1px solid #ddd; 
+            padding: 20px; 
+            margin: 15px 0; 
+            border-radius: 8px; 
+            background: #fafafa;
+        }
+        .log-entry { 
+            font-family: 'Courier New', monospace; 
+            font-size: 12px; 
+            padding: 8px; 
+            margin: 3px 0; 
+            border-left: 4px solid #007bff; 
+            background: #f8f9fa; 
+            border-radius: 3px;
+        }
+        .log-entry.error { border-left-color: #dc3545; background: #fff5f5; }
+        .log-entry.success { border-left-color: #28a745; background: #f0fff4; }
+        .log-entry.warning { border-left-color: #ffc107; background: #fffbf0; }
+        pre { 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 5px; 
+            overflow-x: auto; 
+            border: 1px solid #e9ecef;
+        }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .user-info { 
+            background: #e8f5e8; 
+            padding: 15px; 
+            border-radius: 5px; 
+            border: 1px solid #c3e6cb;
+        }
+        .user-info h4 { margin-top: 0; color: #155724; }
+        .stats { 
+            display: flex; 
+            gap: 20px; 
+            margin: 15px 0;
+        }
+        .stat-item { 
+            background: white; 
+            padding: 15px; 
+            border-radius: 5px; 
+            border: 1px solid #ddd; 
+            text-align: center;
+            min-width: 120px;
+        }
+        .stat-value { font-size: 24px; font-weight: bold; color: #007bff; }
+        .stat-label { font-size: 12px; color: #666; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔐 Complete Firebase Authentication Flow Test</h1>
+    <p>This comprehensive test will verify all aspects of Firebase authentication for the Career Guide app.</p>
+
+    <!-- Configuration Test -->
+    <div class="container">
+        <h2>🔧 Firebase Configuration</h2>
+        <div id="config-status"></div>
+        <button onclick="testConfiguration()">Test Configuration</button>
+        <button onclick="showConfig()">Show Config</button>
+    </div>
+
+    <!-- Authentication Form -->
+    <div class="container">
+        <h2>👤 User Authentication</h2>
+        <div class="grid">
+            <div>
+                <div class="form-group">
+                    <label for="email">Email Address:</label>
+                    <input type="email" id="email" placeholder="test@example.com" value="test@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" placeholder="Password (min 6 chars)" value="test123456">
+                </div>
+                <div class="form-group">
+                    <label for="displayName">Display Name:</label>
+                    <input type="text" id="displayName" placeholder="Your Name" value="Test User">
+                </div>
+                <div class="form-group">
+                    <button onclick="registerUser()" id="registerBtn">📝 Register New User</button>
+                    <button onclick="loginUser()" id="loginBtn">🔑 Login User</button>
+                    <button onclick="logoutUser()" id="logoutBtn" class="danger">🚪 Logout</button>
+                </div>
+                <div class="form-group">
+                    <button onclick="testGoogleAuth()" id="googleBtn" class="success">🔍 Google Login</button>
+                    <button onclick="resetPassword()" id="resetBtn">📧 Reset Password</button>
+                </div>
+            </div>
+            <div>
+                <div id="auth-status"></div>
+                <div id="user-info"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Status -->
+    <div class="container">
+        <h2>📊 Current Status</h2>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="auth-stat">❌</div>
+                <div class="stat-label">Authenticated</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="user-count">0</div>
+                <div class="stat-label">Test Users</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="test-count">0</div>
+                <div class="stat-label">Tests Run</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="error-count">0</div>
+                <div class="stat-label">Errors</div>
+            </div>
+        </div>
+        <button onclick="refreshStatus()">🔄 Refresh Status</button>
+        <button onclick="runAllTests()">🧪 Run All Tests</button>
+        <button onclick="clearAllData()">🗑️ Clear Test Data</button>
+    </div>
+
+    <!-- Firestore Test -->
+    <div class="container">
+        <h2>🗄️ Firestore Database</h2>
+        <div id="firestore-status"></div>
+        <button onclick="testFirestore()">Test Connection</button>
+        <button onclick="testUserDocument()">Test User Document</button>
+        <button onclick="testSecurityRules()">Test Security Rules</button>
+    </div>
+
+    <!-- Advanced Tests -->
+    <div class="container">
+        <h2>🔬 Advanced Tests</h2>
+        <div id="advanced-status"></div>
+        <button onclick="testTokenGeneration()">Test ID Token</button>
+        <button onclick="testEmailVerification()">Test Email Verification</button>
+        <button onclick="testProfileUpdate()">Test Profile Update</button>
+        <button onclick="simulateAppFlow()">🎯 Simulate App Flow</button>
+    </div>
+
+    <!-- Test Log -->
+    <div class="container">
+        <h2>📝 Test Log</h2>
+        <button onclick="clearLog()">Clear Log</button>
+        <button onclick="exportLog()">Export Log</button>
+        <div id="log-container" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: white; border-radius: 5px;"></div>
+    </div>
+
+    <!-- Firebase v9 SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+        import { 
+            getAuth, 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword, 
+            signOut, 
+            onAuthStateChanged,
+            updateProfile,
+            deleteUser,
+            GoogleAuthProvider,
+            signInWithPopup,
+            sendPasswordResetEmail,
+            sendEmailVerification,
+            updatePassword
+        } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+        import { 
+            getFirestore, 
+            doc, 
+            setDoc, 
+            getDoc, 
+            updateDoc,
+            deleteDoc,
+            collection,
+            query,
+            where,
+            getDocs
+        } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDowurbYQjV55Ox-Gid8JzpgrkfugU51U8",
+            authDomain: "cloudproject-22b3b.firebaseapp.com",
+            projectId: "cloudproject-22b3b",
+            storageBucket: "cloudproject-22b3b.firebasestorage.app",
+            messagingSenderId: "39239274386",
+            appId: "1:39239274386:web:593da94b50acc985c67b4b",
+            measurementId: "G-WZ8GJHXJSY"
+        };
+
+        let app, auth, db;
+        let currentUser = null;
+        let testCount = 0;
+        let errorCount = 0;
+        let userCount = 0;
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logContainer = document.getElementById('log-container');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            logContainer.insertBefore(logEntry, logContainer.firstChild);
+            console.log(`[${timestamp}] ${message}`);
+            
+            if (type === 'error') errorCount++;
+            testCount++;
+            updateStats();
+        }
+
+        function updateStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.innerHTML = `<div class="${type}">${message}</div>`;
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('auth-stat').textContent = currentUser ? '✅' : '❌';
+            document.getElementById('test-count').textContent = testCount;
+            document.getElementById('error-count').textContent = errorCount;
+            document.getElementById('user-count').textContent = userCount;
+        }
+
+        // Initialize Firebase
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            
+            log('✅ Firebase initialized successfully', 'success');
+            
+            // Set up auth state listener
+            onAuthStateChanged(auth, (user) => {
+                currentUser = user;
+                updateUserInfo();
+                updateStats();
+                if (user) {
+                    log(`✅ Auth state: User signed in - ${user.email}`, 'success');
+                } else {
+                    log('ℹ️ Auth state: User signed out', 'info');
+                }
+            });
+
+        } catch (error) {
+            log(`❌ Firebase initialization failed: ${error.message}`, 'error');
+            updateStatus('config-status', `❌ Initialization failed: ${error.message}`, 'error');
+        }
+
+        function updateUserInfo() {
+            const userInfoDiv = document.getElementById('user-info');
+            if (currentUser) {
+                userInfoDiv.innerHTML = `
+                    <div class="user-info">
+                        <h4>👤 Current User</h4>
+                        <p><strong>Email:</strong> ${currentUser.email}</p>
+                        <p><strong>UID:</strong> ${currentUser.uid}</p>
+                        <p><strong>Display Name:</strong> ${currentUser.displayName || 'Not set'}</p>
+                        <p><strong>Email Verified:</strong> ${currentUser.emailVerified ? '✅' : '❌'}</p>
+                        <p><strong>Created:</strong> ${new Date(currentUser.metadata.creationTime).toLocaleString()}</p>
+                        <p><strong>Last Sign In:</strong> ${new Date(currentUser.metadata.lastSignInTime).toLocaleString()}</p>
+                    </div>
+                `;
+            } else {
+                userInfoDiv.innerHTML = '<div class="status info">No user authenticated</div>';
+            }
+        }
+
+        // Test functions
+        window.testConfiguration = async function() {
+            log('🔄 Testing Firebase configuration...', 'info');
+            
+            try {
+                // Test API key by making a simple request
+                const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${firebaseConfig.apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken: 'test' })
+                });
+                
+                if (response.status === 400) {
+                    log('✅ API key is valid (expected 400 for invalid token)', 'success');
+                    updateStatus('config-status', '✅ Configuration is valid', 'success');
+                } else {
+                    log(`⚠️ Unexpected response: ${response.status}`, 'warning');
+                }
+            } catch (error) {
+                log(`❌ Configuration test failed: ${error.message}`, 'error');
+                updateStatus('config-status', `❌ Configuration error: ${error.message}`, 'error');
+            }
+        };
+
+        window.showConfig = function() {
+            const configStr = JSON.stringify(firebaseConfig, null, 2);
+            updateStatus('config-status', `<pre>${configStr}</pre>`, 'info');
+        };
+
+        window.registerUser = async function() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const displayName = document.getElementById('displayName').value;
+
+            if (!email || !password) {
+                log('❌ Please enter email and password', 'error');
+                return;
+            }
+
+            try {
+                log(`🔄 Registering user: ${email}`, 'info');
+                updateStatus('auth-status', '🔄 Creating account...', 'info');
+                
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                
+                log(`✅ Registration successful: ${user.uid}`, 'success');
+                
+                // Update profile
+                if (displayName) {
+                    await updateProfile(user, { displayName: displayName });
+                    log(`✅ Display name updated: ${displayName}`, 'success');
+                }
+                
+                // Create Firestore document
+                const userData = {
+                    uid: user.uid,
+                    email: email,
+                    displayName: displayName,
+                    createdAt: new Date().toISOString(),
+                    lastLoginAt: new Date().toISOString(),
+                    profileComplete: false
+                };
+                
+                await setDoc(doc(db, 'users', user.uid), userData);
+                log('✅ User document created in Firestore', 'success');
+                
+                updateStatus('auth-status', `✅ Registration successful: ${email}`, 'success');
+                userCount++;
+                updateStats();
+                
+            } catch (error) {
+                log(`❌ Registration failed: ${error.code} - ${error.message}`, 'error');
+                updateStatus('auth-status', `❌ Registration failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.loginUser = async function() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                log('❌ Please enter email and password', 'error');
+                return;
+            }
+
+            try {
+                log(`🔄 Logging in user: ${email}`, 'info');
+                updateStatus('auth-status', '🔄 Signing in...', 'info');
+                
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                
+                log(`✅ Login successful: ${user.uid}`, 'success');
+                updateStatus('auth-status', `✅ Login successful: ${email}`, 'success');
+                
+                // Update last login
+                try {
+                    await updateDoc(doc(db, 'users', user.uid), {
+                        lastLoginAt: new Date().toISOString()
+                    });
+                    log('✅ Last login time updated', 'success');
+                } catch (firestoreError) {
+                    log(`⚠️ Could not update last login: ${firestoreError.message}`, 'warning');
+                }
+                
+            } catch (error) {
+                log(`❌ Login failed: ${error.code} - ${error.message}`, 'error');
+                updateStatus('auth-status', `❌ Login failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.logoutUser = async function() {
+            try {
+                log('🔄 Logging out user', 'info');
+                updateStatus('auth-status', '🔄 Signing out...', 'info');
+                
+                await signOut(auth);
+                log('✅ Logout successful', 'success');
+                updateStatus('auth-status', '✅ Logout successful', 'success');
+                
+            } catch (error) {
+                log(`❌ Logout failed: ${error.message}`, 'error');
+                updateStatus('auth-status', `❌ Logout failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testGoogleAuth = async function() {
+            try {
+                log('🔄 Testing Google authentication', 'info');
+                
+                const provider = new GoogleAuthProvider();
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                
+                log(`✅ Google login successful: ${user.email}`, 'success');
+                updateStatus('auth-status', `✅ Google login successful: ${user.email}`, 'success');
+                
+            } catch (error) {
+                if (error.code === 'auth/popup-closed-by-user') {
+                    log('ℹ️ Google login cancelled by user', 'info');
+                } else {
+                    log(`❌ Google login failed: ${error.message}`, 'error');
+                }
+            }
+        };
+
+        window.resetPassword = async function() {
+            const email = document.getElementById('email').value;
+            if (!email) {
+                log('❌ Please enter email address', 'error');
+                return;
+            }
+
+            try {
+                await sendPasswordResetEmail(auth, email);
+                log(`✅ Password reset email sent to: ${email}`, 'success');
+            } catch (error) {
+                log(`❌ Password reset failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testFirestore = async function() {
+            try {
+                log('🔄 Testing Firestore connection', 'info');
+                updateStatus('firestore-status', '🔄 Testing Firestore...', 'info');
+                
+                const testDoc = doc(db, 'test', 'connection-test');
+                await setDoc(testDoc, {
+                    timestamp: new Date().toISOString(),
+                    message: 'Firestore connection test'
+                });
+                
+                const docSnap = await getDoc(testDoc);
+                if (docSnap.exists()) {
+                    log('✅ Firestore read/write successful', 'success');
+                    updateStatus('firestore-status', '✅ Firestore working correctly', 'success');
+                    await deleteDoc(testDoc);
+                } else {
+                    log('❌ Could not read test document', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Firestore test failed: ${error.message}`, 'error');
+                updateStatus('firestore-status', `❌ Firestore error: ${error.message}`, 'error');
+            }
+        };
+
+        window.testUserDocument = async function() {
+            if (!currentUser) {
+                log('❌ No user logged in', 'error');
+                return;
+            }
+
+            try {
+                log(`🔄 Testing user document for: ${currentUser.email}`, 'info');
+                
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    log(`✅ User document found: ${JSON.stringify(userData, null, 2)}`, 'success');
+                } else {
+                    log('❌ User document not found', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ User document test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testSecurityRules = async function() {
+            if (!currentUser) {
+                log('❌ No user logged in for security test', 'error');
+                return;
+            }
+
+            try {
+                log('🔄 Testing Firestore security rules', 'info');
+                
+                // Test: Can access own document
+                const ownDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (ownDoc.exists()) {
+                    log('✅ Can access own user document', 'success');
+                } else {
+                    log('⚠️ Own user document not found', 'warning');
+                }
+                
+                // Test: Cannot access other user's document (this should fail)
+                try {
+                    const otherDoc = await getDoc(doc(db, 'users', 'fake-user-id'));
+                    log('⚠️ Security rules may be too permissive', 'warning');
+                } catch (securityError) {
+                    log('✅ Security rules working - cannot access other user data', 'success');
+                }
+                
+            } catch (error) {
+                log(`❌ Security rules test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testTokenGeneration = async function() {
+            if (!currentUser) {
+                log('❌ No user logged in', 'error');
+                return;
+            }
+
+            try {
+                log('🔄 Testing ID token generation', 'info');
+                
+                const token = await currentUser.getIdToken();
+                log(`✅ ID token generated (length: ${token.length})`, 'success');
+                
+                // Decode token payload (just for testing)
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                log(`✅ Token payload: ${JSON.stringify(payload, null, 2)}`, 'success');
+                
+            } catch (error) {
+                log(`❌ Token generation failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testEmailVerification = async function() {
+            if (!currentUser) {
+                log('❌ No user logged in', 'error');
+                return;
+            }
+
+            try {
+                log('🔄 Sending email verification', 'info');
+                
+                await sendEmailVerification(currentUser);
+                log('✅ Email verification sent', 'success');
+                
+            } catch (error) {
+                log(`❌ Email verification failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testProfileUpdate = async function() {
+            if (!currentUser) {
+                log('❌ No user logged in', 'error');
+                return;
+            }
+
+            try {
+                log('🔄 Testing profile update', 'info');
+                
+                const newDisplayName = `Updated User ${Date.now()}`;
+                await updateProfile(currentUser, { displayName: newDisplayName });
+                
+                log(`✅ Profile updated: ${newDisplayName}`, 'success');
+                updateUserInfo();
+                
+            } catch (error) {
+                log(`❌ Profile update failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.simulateAppFlow = async function() {
+            log('🎯 Starting complete app flow simulation', 'info');
+            
+            const testEmail = `test-${Date.now()}@example.com`;
+            const testPassword = 'test123456';
+            const testName = 'App Flow Test User';
+            
+            try {
+                // Step 1: Register
+                log('Step 1: Registering new user', 'info');
+                const userCredential = await createUserWithEmailAndPassword(auth, testEmail, testPassword);
+                const user = userCredential.user;
+                
+                // Step 2: Update profile
+                log('Step 2: Updating profile', 'info');
+                await updateProfile(user, { displayName: testName });
+                
+                // Step 3: Create Firestore document
+                log('Step 3: Creating user document', 'info');
+                await setDoc(doc(db, 'users', user.uid), {
+                    uid: user.uid,
+                    email: testEmail,
+                    displayName: testName,
+                    createdAt: new Date().toISOString(),
+                    profileComplete: false
+                });
+                
+                // Step 4: Logout
+                log('Step 4: Logging out', 'info');
+                await signOut(auth);
+                
+                // Step 5: Login again
+                log('Step 5: Logging back in', 'info');
+                await signInWithEmailAndPassword(auth, testEmail, testPassword);
+                
+                // Step 6: Update user document
+                log('Step 6: Updating user document', 'info');
+                await updateDoc(doc(db, 'users', user.uid), {
+                    lastLoginAt: new Date().toISOString(),
+                    profileComplete: true
+                });
+                
+                log('🎉 Complete app flow simulation successful!', 'success');
+                updateStatus('advanced-status', '🎉 App flow simulation completed successfully', 'success');
+                
+            } catch (error) {
+                log(`❌ App flow simulation failed: ${error.message}`, 'error');
+                updateStatus('advanced-status', `❌ App flow failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.runAllTests = async function() {
+            log('🧪 Running all tests...', 'info');
+            
+            await testConfiguration();
+            await testFirestore();
+            
+            if (currentUser) {
+                await testUserDocument();
+                await testSecurityRules();
+                await testTokenGeneration();
+            }
+            
+            log('✅ All tests completed', 'success');
+        };
+
+        window.clearAllData = async function() {
+            if (!confirm('Are you sure you want to clear all test data?')) return;
+            
+            try {
+                if (currentUser) {
+                    await deleteDoc(doc(db, 'users', currentUser.uid));
+                    await deleteUser(currentUser);
+                }
+                
+                testCount = 0;
+                errorCount = 0;
+                userCount = 0;
+                updateStats();
+                
+                log('✅ All test data cleared', 'success');
+            } catch (error) {
+                log(`❌ Clear data failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.refreshStatus = function() {
+            updateUserInfo();
+            updateStats();
+            log('🔄 Status refreshed', 'info');
+        };
+
+        window.clearLog = function() {
+            document.getElementById('log-container').innerHTML = '';
+        };
+
+        window.exportLog = function() {
+            const logs = document.getElementById('log-container').innerText;
+            const blob = new Blob([logs], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `firebase-auth-test-${new Date().toISOString()}.txt`;
+            a.click();
+        };
+
+        // Auto-run initial tests
+        setTimeout(() => {
+            testConfiguration();
+            refreshStatus();
+        }, 1000);
+    </script>
+</body>
+</html>

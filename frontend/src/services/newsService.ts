@@ -25,7 +25,7 @@ export interface NewsResponse {
 }
 
 class NewsService {
-  private baseUrl = 'http://localhost:8000/api/v1/news';
+  private baseUrl = 'http://localhost:8001/api/v1/news';
 
   /**
    * Get latest tech job market news

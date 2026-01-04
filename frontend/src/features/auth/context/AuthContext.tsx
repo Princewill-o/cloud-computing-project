@@ -24,13 +24,16 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // No initial loading
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    // Set up Firebase auth state listener
+    // Set up Firebase auth state listener with immediate response
     const unsubscribe = authService.onAuthStateChange((user) => {
+      console.log('Auth state changed:', user ? `User: ${user.email}` : 'No user');
       setUser(user);
-      setLoading(false);
+      setInitialized(true);
+      // No loading state for auth changes - instant response
     });
 
     // Cleanup subscription on unmount
@@ -38,73 +41,69 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const login = async (data: LoginRequest): Promise<void> => {
-    setLoading(true);
+    // No loading state - instant response
     try {
       const user = await authService.login(data);
       setUser(user);
+      console.log('Login successful:', user.email);
     } catch (error) {
       console.error('Login error:', error);
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
   const register = async (data: RegisterRequest): Promise<void> => {
-    setLoading(true);
+    // No loading state - instant response
     try {
       const user = await authService.register(data);
       setUser(user);
+      console.log('Registration successful:', user.email);
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
   const loginWithGoogle = async (): Promise<void> => {
-    setLoading(true);
+    // No loading state - instant response
     try {
       const user = await authService.loginWithGoogle();
       setUser(user);
+      console.log('Google login successful:', user.email);
     } catch (error) {
       console.error('Google login error:', error);
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
   const loginWithGitHub = async (): Promise<void> => {
-    setLoading(true);
+    // No loading state - instant response
     try {
       const user = await authService.loginWithGitHub();
       setUser(user);
+      console.log('GitHub login successful:', user.email);
     } catch (error) {
       console.error('GitHub login error:', error);
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
   const logout = async (): Promise<void> => {
-    setLoading(true);
+    // No loading state - instant response
     try {
       await authService.logout();
       setUser(null);
+      console.log('Logout successful');
     } catch (error) {
       console.error('Logout error:', error);
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
   const resetPassword = async (email: string): Promise<void> => {
     try {
       await authService.resetPassword(email);
+      console.log('Password reset email sent to:', email);
     } catch (error) {
       console.error('Password reset error:', error);
       throw error;
@@ -114,10 +113,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const updateProfile = async (data: any): Promise<void> => {
     try {
       await authService.updateUserProfile(data);
-      // Update local state
+      // Update local state instantly
       if (user) {
         setUser({ ...user, ...data });
       }
+      console.log('Profile updated successfully');
     } catch (error) {
       console.error('Profile update error:', error);
       throw error;
@@ -129,7 +129,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       value={{ 
         user, 
         isAuthenticated: !!user, 
-        loading,
+        loading: false, // Always false for instant response
         login, 
         register,
         loginWithGoogle,

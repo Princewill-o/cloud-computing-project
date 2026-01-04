@@ -1,0 +1,15 @@
+John Doe
+Software Developer
+
+Experience:
+- 3 years Python development
+- 2 years React development
+- Experience with FastAPI and databases
+
+Skills:
+- Python, JavaScript, React
+- FastAPI, PostgreSQL
+- Git, Docker
+
+Education:
+- Bachelor's in Computer Science

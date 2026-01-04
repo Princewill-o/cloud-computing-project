@@ -60,7 +60,7 @@ export interface ApplicationAnalytics {
 }
 
 class AnalyticsService {
-  private baseUrl = 'http://localhost:8000/api/v1/analytics';
+  private baseUrl = 'http://localhost:8001/api/v1/analytics';
 
   /**
    * Get user-specific analytics

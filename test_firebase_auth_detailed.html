@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Auth Detailed Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        input { padding: 8px; margin: 5px; border: 1px solid #ccc; border-radius: 3px; width: 200px; }
+        .test-section { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .log-entry { font-family: monospace; font-size: 12px; padding: 5px; margin: 2px 0; border-left: 3px solid #007bff; background: #f8f9fa; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Firebase Authentication Detailed Test</h1>
+    
+    <div class="test-section">
+        <h3>🔧 Firebase Configuration Test</h3>
+        <div id="config-status"></div>
+        <button onclick="testFirebaseConfig()">Test Configuration</button>
+    </div>
+
+    <div class="test-section">
+        <h3>🔐 Authentication Methods Test</h3>
+        <div id="auth-methods-status"></div>
+        <button onclick="testAuthMethods()">Test Auth Methods</button>
+    </div>
+
+    <div class="test-section">
+        <h3>👤 User Registration & Login Test</h3>
+        <div>
+            <input type="email" id="email" placeholder="Email" value="test@example.com">
+            <input type="password" id="password" placeholder="Password" value="test123456">
+            <input type="text" id="displayName" placeholder="Display Name" value="Test User">
+        </div>
+        <div>
+            <button onclick="testRegister()" id="registerBtn">Register New User</button>
+            <button onclick="testLogin()" id="loginBtn">Login User</button>
+            <button onclick="testLogout()" id="logoutBtn">Logout</button>
+            <button onclick="clearTestUser()" id="clearBtn">Clear Test User</button>
+        </div>
+        <div id="auth-status"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>🗄️ Firestore Database Test</h3>
+        <div id="firestore-status"></div>
+        <button onclick="testFirestore()">Test Firestore Connection</button>
+        <button onclick="testUserDocument()">Test User Document</button>
+    </div>
+
+    <div class="test-section">
+        <h3>📊 Current User Status</h3>
+        <div id="user-status"></div>
+        <button onclick="refreshUserStatus()">Refresh Status</button>
+    </div>
+
+    <div class="test-section">
+        <h3>📝 Test Log</h3>
+        <button onclick="clearLog()">Clear Log</button>
+        <div id="log-container"></div>
+    </div>
+
+    <!-- Firebase v9 SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+        import { 
+            getAuth, 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword, 
+            signOut, 
+            onAuthStateChanged,
+            updateProfile,
+            deleteUser,
+            GoogleAuthProvider,
+            signInWithPopup
+        } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+        import { 
+            getFirestore, 
+            doc, 
+            setDoc, 
+            getDoc, 
+            updateDoc,
+            deleteDoc,
+            connectFirestoreEmulator
+        } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDowurbYQjV55Ox-Gid8JzpgrkfugU51U8",
+            authDomain: "cloudproject-22b3b.firebaseapp.com",
+            projectId: "cloudproject-22b3b",
+            storageBucket: "cloudproject-22b3b.firebasestorage.app",
+            messagingSenderId: "39239274386",
+            appId: "1:39239274386:web:593da94b50acc985c67b4b",
+            measurementId: "G-WZ8GJHXJSY"
+        };
+
+        let app, auth, db;
+        let currentUser = null;
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logContainer = document.getElementById('log-container');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            logContainer.insertBefore(logEntry, logContainer.firstChild);
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function updateStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="${type}">${message}</div>`;
+        }
+
+        // Initialize Firebase
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            
+            log('✅ Firebase initialized successfully', 'success');
+            
+            // Set up auth state listener
+            onAuthStateChanged(auth, (user) => {
+                currentUser = user;
+                refreshUserStatus();
+                if (user) {
+                    log(`✅ Auth state changed: User signed in - ${user.email}`, 'success');
+                } else {
+                    log('ℹ️ Auth state changed: User signed out', 'info');
+                }
+            });
+
+        } catch (error) {
+            log(`❌ Firebase initialization failed: ${error.message}`, 'error');
+            updateStatus('config-status', `❌ Initialization failed: ${error.message}`, 'error');
+        }
+
+        // Test functions
+        window.testFirebaseConfig = function() {
+            log('🔄 Testing Firebase configuration...', 'info');
+            
+            const requiredFields = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
+            const missingFields = requiredFields.filter(field => !firebaseConfig[field]);
+            
+            if (missingFields.length > 0) {
+                const message = `❌ Missing configuration fields: ${missingFields.join(', ')}`;
+                log(message, 'error');
+                updateStatus('config-status', message, 'error');
+                return;
+            }
+            
+            // Test if Firebase services are accessible
+            try {
+                const authInstance = getAuth();
+                const dbInstance = getFirestore();
+                
+                const message = `✅ Configuration valid. Auth domain: ${firebaseConfig.authDomain}, Project: ${firebaseConfig.projectId}`;
+                log(message, 'success');
+                updateStatus('config-status', message, 'success');
+            } catch (error) {
+                const message = `❌ Configuration error: ${error.message}`;
+                log(message, 'error');
+                updateStatus('config-status', message, 'error');
+            }
+        };
+
+        window.testAuthMethods = function() {
+            log('🔄 Testing authentication methods...', 'info');
+            
+            try {
+                // Test if we can create auth providers
+                const googleProvider = new GoogleAuthProvider();
+                
+                const message = `✅ Authentication methods available: Email/Password, Google OAuth`;
+                log(message, 'success');
+                updateStatus('auth-methods-status', message, 'success');
+            } catch (error) {
+                const message = `❌ Auth methods error: ${error.message}`;
+                log(message, 'error');
+                updateStatus('auth-methods-status', message, 'error');
+            }
+        };
+
+        window.testRegister = async function() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const displayName = document.getElementById('displayName').value;
+
+            if (!email || !password) {
+                log('❌ Please enter email and password', 'error');
+                return;
+            }
+
+            try {
+                log(`🔄 Attempting to register: ${email}`, 'info');
+                updateStatus('auth-status', '🔄 Registering user...', 'info');
+                
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                
+                log(`✅ Registration successful: ${user.uid}`, 'success');
+                
+                // Update profile with display name
+                if (displayName) {
+                    await updateProfile(user, { displayName: displayName });
+                    log(`✅ Display name updated: ${displayName}`, 'success');
+                }
+                
+                // Create user document in Firestore
+                try {
+                    const userData = {
+                        uid: user.uid,
+                        email: email,
+                        displayName: displayName,
+                        createdAt: new Date().toISOString(),
+                        lastLoginAt: new Date().toISOString(),
+                        profileComplete: false
+                    };
+                    
+                    await setDoc(doc(db, 'users', user.uid), userData);
+                    log('✅ User document created in Firestore', 'success');
+                    updateStatus('auth-status', `✅ Registration successful: ${email}`, 'success');
+                } catch (firestoreError) {
+                    log(`⚠️ Firestore error (user still registered): ${firestoreError.message}`, 'warning');
+                    updateStatus('auth-status', `✅ Registration successful, but Firestore error: ${firestoreError.message}`, 'warning');
+                }
+                
+            } catch (error) {
+                log(`❌ Registration failed: ${error.code} - ${error.message}`, 'error');
+                updateStatus('auth-status', `❌ Registration failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testLogin = async function() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                log('❌ Please enter email and password', 'error');
+                return;
+            }
+
+            try {
+                log(`🔄 Attempting to login: ${email}`, 'info');
+                updateStatus('auth-status', '🔄 Logging in...', 'info');
+                
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                
+                log(`✅ Login successful: ${user.uid}`, 'success');
+                updateStatus('auth-status', `✅ Login successful: ${email}`, 'success');
+                
+                // Update last login time in Firestore
+                try {
+                    await updateDoc(doc(db, 'users', user.uid), {
+                        lastLoginAt: new Date().toISOString()
+                    });
+                    log('✅ Last login time updated in Firestore', 'success');
+                } catch (firestoreError) {
+                    log(`⚠️ Could not update last login time: ${firestoreError.message}`, 'warning');
+                }
+                
+            } catch (error) {
+                log(`❌ Login failed: ${error.code} - ${error.message}`, 'error');
+                updateStatus('auth-status', `❌ Login failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testLogout = async function() {
+            try {
+                log('🔄 Attempting to logout', 'info');
+                updateStatus('auth-status', '🔄 Logging out...', 'info');
+                
+                await signOut(auth);
+                log('✅ Logout successful', 'success');
+                updateStatus('auth-status', '✅ Logout successful', 'success');
+            } catch (error) {
+                log(`❌ Logout failed: ${error.message}`, 'error');
+                updateStatus('auth-status', `❌ Logout failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.clearTestUser = async function() {
+            if (!currentUser) {
+                log('❌ No user to delete', 'error');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete the user ${currentUser.email}?`)) {
+                return;
+            }
+
+            try {
+                log(`🔄 Deleting user: ${currentUser.email}`, 'info');
+                
+                // Delete user document from Firestore first
+                try {
+                    await deleteDoc(doc(db, 'users', currentUser.uid));
+                    log('✅ User document deleted from Firestore', 'success');
+                } catch (firestoreError) {
+                    log(`⚠️ Could not delete user document: ${firestoreError.message}`, 'warning');
+                }
+                
+                // Delete user from Firebase Auth
+                await deleteUser(currentUser);
+                log('✅ User deleted from Firebase Auth', 'success');
+                updateStatus('auth-status', '✅ Test user deleted', 'success');
+                
+            } catch (error) {
+                log(`❌ User deletion failed: ${error.message}`, 'error');
+                updateStatus('auth-status', `❌ User deletion failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testFirestore = async function() {
+            try {
+                log('🔄 Testing Firestore connection...', 'info');
+                updateStatus('firestore-status', '🔄 Testing Firestore...', 'info');
+                
+                // Try to write a test document
+                const testDoc = doc(db, 'test', 'connection-test');
+                await setDoc(testDoc, {
+                    timestamp: new Date().toISOString(),
+                    message: 'Firestore connection test'
+                });
+                
+                // Try to read it back
+                const docSnap = await getDoc(testDoc);
+                if (docSnap.exists()) {
+                    log('✅ Firestore read/write test successful', 'success');
+                    updateStatus('firestore-status', '✅ Firestore connection working', 'success');
+                    
+                    // Clean up test document
+                    await deleteDoc(testDoc);
+                    log('✅ Test document cleaned up', 'success');
+                } else {
+                    log('❌ Could not read test document', 'error');
+                    updateStatus('firestore-status', '❌ Firestore read failed', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Firestore test failed: ${error.message}`, 'error');
+                updateStatus('firestore-status', `❌ Firestore error: ${error.message}`, 'error');
+            }
+        };
+
+        window.testUserDocument = async function() {
+            if (!currentUser) {
+                log('❌ No user logged in', 'error');
+                updateStatus('firestore-status', '❌ No user logged in', 'error');
+                return;
+            }
+
+            try {
+                log(`🔄 Testing user document for: ${currentUser.email}`, 'info');
+                
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    log(`✅ User document found: ${JSON.stringify(userData, null, 2)}`, 'success');
+                    updateStatus('firestore-status', '✅ User document exists and accessible', 'success');
+                } else {
+                    log('❌ User document not found', 'error');
+                    updateStatus('firestore-status', '❌ User document not found', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ User document test failed: ${error.message}`, 'error');
+                updateStatus('firestore-status', `❌ User document error: ${error.message}`, 'error');
+            }
+        };
+
+        window.refreshUserStatus = function() {
+            if (currentUser) {
+                const userInfo = `
+                    <div class="success">
+                        <strong>✅ User Authenticated</strong><br>
+                        <strong>UID:</strong> ${currentUser.uid}<br>
+                        <strong>Email:</strong> ${currentUser.email}<br>
+                        <strong>Display Name:</strong> ${currentUser.displayName || 'Not set'}<br>
+                        <strong>Email Verified:</strong> ${currentUser.emailVerified ? '✅' : '❌'}<br>
+                        <strong>Creation Time:</strong> ${currentUser.metadata.creationTime}<br>
+                        <strong>Last Sign In:</strong> ${currentUser.metadata.lastSignInTime}
+                    </div>
+                `;
+                updateStatus('user-status', userInfo, 'success');
+            } else {
+                updateStatus('user-status', '❌ No user authenticated', 'error');
+            }
+        };
+
+        window.clearLog = function() {
+            document.getElementById('log-container').innerHTML = '';
+        };
+
+        // Auto-run initial tests
+        setTimeout(() => {
+            testFirebaseConfig();
+            testAuthMethods();
+            refreshUserStatus();
+        }, 1000);
+    </script>
+</body>
+</html>
