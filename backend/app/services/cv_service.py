@@ -142,6 +142,18 @@ class CVService:
         """Get user's CV record"""
         return self.db.query(CVFile).filter(CVFile.user_id == user_id).first()
     
+    async def get_user_cv_details(self, user_id: uuid.UUID) -> str:
+    
+        cv_record = self.db.query(CVFile).filter(CVFile.user_id == user_id).first()
+
+        # Download file from storage
+        file_path = await self.storage_service.download_file(cv_record.file_url)
+        
+        # Extract text
+        raw_text = self.cv_parser.extract_text(file_path)
+
+        return raw_text       
+
     async def delete_user_cv(self, user_id: uuid.UUID) -> bool:
         """Delete user's CV"""
         cv_record = self.get_user_cv(user_id)

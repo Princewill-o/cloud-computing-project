@@ -3,7 +3,7 @@ import axios from 'axios';
 const DEFAULT_API_HOST = 'jsearch.p.rapidapi.com';
 const DEFAULT_API_URL = 'https://jsearch.p.rapidapi.com/search';
 
-function getEnv(key, fallback = undefined) {
+export function getEnv(key, fallback = undefined) {
     const value = process.env[key];
     return value !== undefined && value !== '' ? value : fallback;
 }

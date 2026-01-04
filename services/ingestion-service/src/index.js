@@ -1,6 +1,7 @@
 import express from 'express';
 import 'dotenv/config';
 import { fetchJobs } from './jsearch.client.js';
+import { fetchEvents } from './serpapi.client.js';
 import { transformJobs } from './transform.js';
 import { writeRowsToGCS } from './gcs.writer.js';
 import { loadToBigQuery } from './bq.loader.js';
@@ -14,7 +15,8 @@ const DEFAULTS = {
     GCS_PREFIX: 'staging/jsearch',
     BQ_PROJECT_ID: 'job-recommendations-app',
     BQ_DATASET: 'jobs_ds',
-    BQ_TABLE: 'jobs_jsearch_raw'
+    BQ_TABLE: 'jobs_jsearch_raw',
+    EVENT_BQ_TABLE: 'events_google_raw'
 };
 
 const getEnv = (key) => process.env[key] || DEFAULTS[key];
@@ -57,6 +59,61 @@ app.get('/ingest', async (req, res) => {
             projectId: getEnv('BQ_PROJECT_ID'),
             datasetId: getEnv('BQ_DATASET'),
             tableId: getEnv('BQ_TABLE')
+        });
+
+        console.log(`Triggered BigQuery load job ${jobId}`);
+
+        res.json({
+            inserted_file: gcsUri,
+            load_job_id: jobId,
+            rows: rows.length
+        });
+    } catch (error) {
+        console.error('Ingestion failed:', error.message, error.stack);
+        res.status(500).json({ error: error.message || 'Internal Server Error' });
+    }
+});
+
+app.get('/eventingest', async (req, res) => {
+    try {
+        const serpApiKey = process.env.SERPAPI_KEY;
+        const bucket = process.env.GCS_BUCKET;
+
+        if (!serpApiKey) {
+            throw new Error('SERPAPI_KEY is required');
+        }
+        if (!bucket) {
+            throw new Error('GCS_BUCKET is required');
+        }
+
+        const engine = 'google_events';
+        const query = req.query.query || 'hackathon';
+        const location = req.query.country || 'london';
+        
+
+        console.log(`Starting ingestion for query="${query}", location=${location}`);
+
+        const events = await fetchEvents({engine, query, location});
+        const statusCode = events.statusCode ?? 200;
+
+        if (!Array.isArray(events) || events.length === 0) {
+            throw new Error('No events returned from JSearch');
+        }
+
+        //need to add a transformEvents
+        //const rows = transformJobs(jobs, { searchQuery: query, country, statusCode });
+
+        const gcsUri = await writeRowsToGCS(rows, {
+            bucketName: bucket,
+            prefix: getEnv('GCS_PREFIX')
+        });
+
+        console.log(`Uploaded ${rows.length} rows to ${gcsUri}`);
+
+        const jobId = await loadToBigQuery(gcsUri, {
+            projectId: getEnv('BQ_PROJECT_ID'),
+            datasetId: getEnv('BQ_DATASET'),
+            tableId: getEnv('EVENT_BQ_TABLE')
         });
 
         console.log(`Triggered BigQuery load job ${jobId}`);
