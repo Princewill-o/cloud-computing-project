@@ -51,7 +51,11 @@ export function RegisterPage() {
     }
 
     try {
-      await register(formData.email, formData.password, formData.full_name);
+      await register({
+        email: formData.email,
+        password: formData.password,
+        displayName: formData.full_name
+      });
       navigate("/dashboard", { replace: true });
     } catch (err: any) {
       console.error("Registration error:", err);

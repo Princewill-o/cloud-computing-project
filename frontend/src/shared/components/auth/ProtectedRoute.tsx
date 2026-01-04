@@ -19,17 +19,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return adminParam === 'true' || adminStorage === 'true';
   }, []);
 
-  // Temporary bypass for debugging - remove this in production
-  const debugMode = React.useMemo(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('debug') === 'true';
-  }, []);
-
-  if (debugMode) {
-    console.log("Debug mode enabled - bypassing authentication");
-    return <>{children}</>;
-  }
-
   if (loading && !isAdminMode) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-purple-900/20">

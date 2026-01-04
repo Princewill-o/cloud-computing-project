@@ -22,7 +22,7 @@ export function LoginPage() {
     setError(null);
 
     try {
-      await login(email, password);
+      await login({ email, password });
       navigate("/dashboard", { replace: true });
     } catch (err: any) {
       console.error("Login error:", err);

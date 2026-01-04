@@ -1,31 +1,42 @@
 /**
- * Authentication service for backend API
+ * Firebase Authentication service
  */
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  User as FirebaseUser,
+  updateProfile,
+  sendPasswordResetEmail,
+  GoogleAuthProvider,
+  signInWithPopup,
+  GithubAuthProvider
+} from "firebase/auth";
+import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
+import { auth, db } from "../config/firebase";
 
 export interface User {
-  user_id: string;
+  uid: string;
   email: string;
-  full_name: string;
-  name?: string; // Alias for full_name
+  displayName: string | null;
+  full_name?: string;
+  name?: string | null; // Alias for displayName
   jobTitle?: string;
   location?: string;
   skills?: string[];
   experience?: string;
   bio?: string;
   profilePicture?: string;
-}
-
-export interface LoginResponse {
-  access_token: string;
-  refresh_token: string;
-  token_type: string;
-  user: User;
+  photoURL?: string;
+  createdAt?: string;
+  lastLoginAt?: string;
 }
 
 export interface RegisterRequest {
   email: string;
   password: string;
-  full_name: string;
+  displayName: string;
 }
 
 export interface LoginRequest {
@@ -34,125 +45,297 @@ export interface LoginRequest {
 }
 
 class AuthService {
-  private baseUrl = 'http://localhost:8000/api/v1/auth';
   private currentUser: User | null = null;
-  private accessToken: string | null = null;
 
   constructor() {
-    // Load user from localStorage on initialization
-    this.loadUserFromStorage();
-  }
-
-  private loadUserFromStorage() {
-    try {
-      const userData = localStorage.getItem('user');
-      const token = localStorage.getItem('access_token');
-      
-      if (userData && token) {
-        this.currentUser = JSON.parse(userData);
-        this.accessToken = token;
+    // Set up auth state listener
+    onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        this.currentUser = await this.createUserFromFirebaseUser(firebaseUser);
+      } else {
+        this.currentUser = null;
       }
-    } catch (error) {
-      console.error('Error loading user from storage:', error);
-      this.clearStorage();
-    }
+    });
   }
 
-  private saveUserToStorage(user: User, token: string) {
-    localStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('access_token', token);
-    this.currentUser = user;
-    this.accessToken = token;
-  }
+  private async createUserFromFirebaseUser(firebaseUser: FirebaseUser): Promise<User> {
+    // Get additional user data from Firestore
+    const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+    const userData = userDoc.data();
 
-  private clearStorage() {
-    localStorage.removeItem('user');
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    this.currentUser = null;
-    this.accessToken = null;
+    return {
+      uid: firebaseUser.uid,
+      email: firebaseUser.email || '',
+      displayName: firebaseUser.displayName || null,
+      name: firebaseUser.displayName || null,
+      full_name: firebaseUser.displayName || '',
+      photoURL: firebaseUser.photoURL || undefined,
+      profilePicture: firebaseUser.photoURL || undefined,
+      createdAt: userData?.createdAt,
+      lastLoginAt: new Date().toISOString(),
+      ...userData // Include any additional data from Firestore
+    };
   }
 
   async register(data: RegisterRequest): Promise<User> {
     try {
-      const response = await fetch(`${this.baseUrl}/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+      // Create user with Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(
+        auth, 
+        data.email, 
+        data.password
+      );
+
+      // Update the user's display name
+      await updateProfile(userCredential.user, {
+        displayName: data.displayName
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Registration failed');
-      }
+      // Create user document in Firestore
+      const userData = {
+        uid: userCredential.user.uid,
+        email: data.email,
+        displayName: data.displayName,
+        full_name: data.displayName,
+        createdAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+        profileComplete: false
+      };
 
-      const result: LoginResponse = await response.json();
-      
-      // Save tokens
-      localStorage.setItem('refresh_token', result.refresh_token);
-      this.saveUserToStorage(result.user, result.access_token);
-      
-      return result.user;
-    } catch (error) {
+      await setDoc(doc(db, 'users', userCredential.user.uid), userData);
+
+      // Return the user object
+      return await this.createUserFromFirebaseUser(userCredential.user);
+    } catch (error: any) {
       console.error('Registration error:', error);
-      throw error;
+      
+      // Provide user-friendly error messages
+      if (error.code === 'auth/email-already-in-use') {
+        throw new Error('An account with this email already exists');
+      } else if (error.code === 'auth/weak-password') {
+        throw new Error('Password should be at least 6 characters');
+      } else if (error.code === 'auth/invalid-email') {
+        throw new Error('Please enter a valid email address');
+      }
+      
+      throw new Error(error.message || 'Registration failed');
     }
   }
 
   async login(data: LoginRequest): Promise<User> {
     try {
-      const response = await fetch(`${this.baseUrl}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+      const userCredential = await signInWithEmailAndPassword(
+        auth, 
+        data.email, 
+        data.password
+      );
+
+      // Update last login time in Firestore
+      await updateDoc(doc(db, 'users', userCredential.user.uid), {
+        lastLoginAt: new Date().toISOString()
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Login failed');
+      return await this.createUserFromFirebaseUser(userCredential.user);
+    } catch (error: any) {
+      console.error('Login error:', error);
+      
+      // Provide user-friendly error messages
+      if (error.code === 'auth/user-not-found') {
+        throw new Error('No account found with this email');
+      } else if (error.code === 'auth/wrong-password') {
+        throw new Error('Incorrect password');
+      } else if (error.code === 'auth/invalid-email') {
+        throw new Error('Please enter a valid email address');
+      } else if (error.code === 'auth/too-many-requests') {
+        throw new Error('Too many failed attempts. Please try again later');
+      }
+      
+      throw new Error(error.message || 'Login failed');
+    }
+  }
+
+  async loginWithGoogle(): Promise<User> {
+    try {
+      const provider = new GoogleAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
+
+      // Create or update user document in Firestore
+      const userRef = doc(db, 'users', userCredential.user.uid);
+      const userDoc = await getDoc(userRef);
+
+      if (!userDoc.exists()) {
+        // Create new user document
+        const userData = {
+          uid: userCredential.user.uid,
+          email: userCredential.user.email,
+          displayName: userCredential.user.displayName,
+          full_name: userCredential.user.displayName,
+          photoURL: userCredential.user.photoURL,
+          createdAt: new Date().toISOString(),
+          lastLoginAt: new Date().toISOString(),
+          profileComplete: false,
+          provider: 'google'
+        };
+        await setDoc(userRef, userData);
+      } else {
+        // Update last login time
+        await updateDoc(userRef, {
+          lastLoginAt: new Date().toISOString()
+        });
       }
 
-      const result: LoginResponse = await response.json();
+      return await this.createUserFromFirebaseUser(userCredential.user);
+    } catch (error: any) {
+      console.error('Google login error:', error);
       
-      // Save tokens
-      localStorage.setItem('refresh_token', result.refresh_token);
-      this.saveUserToStorage(result.user, result.access_token);
+      if (error.code === 'auth/popup-closed-by-user') {
+        throw new Error('Login cancelled');
+      } else if (error.code === 'auth/popup-blocked') {
+        throw new Error('Popup blocked. Please allow popups and try again');
+      }
       
-      return result.user;
+      throw new Error(error.message || 'Google login failed');
+    }
+  }
+
+  async loginWithGitHub(): Promise<User> {
+    try {
+      const provider = new GithubAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
+
+      // Create or update user document in Firestore
+      const userRef = doc(db, 'users', userCredential.user.uid);
+      const userDoc = await getDoc(userRef);
+
+      if (!userDoc.exists()) {
+        // Create new user document
+        const userData = {
+          uid: userCredential.user.uid,
+          email: userCredential.user.email,
+          displayName: userCredential.user.displayName,
+          full_name: userCredential.user.displayName,
+          photoURL: userCredential.user.photoURL,
+          createdAt: new Date().toISOString(),
+          lastLoginAt: new Date().toISOString(),
+          profileComplete: false,
+          provider: 'github'
+        };
+        await setDoc(userRef, userData);
+      } else {
+        // Update last login time
+        await updateDoc(userRef, {
+          lastLoginAt: new Date().toISOString()
+        });
+      }
+
+      return await this.createUserFromFirebaseUser(userCredential.user);
+    } catch (error: any) {
+      console.error('GitHub login error:', error);
+      
+      if (error.code === 'auth/popup-closed-by-user') {
+        throw new Error('Login cancelled');
+      } else if (error.code === 'auth/popup-blocked') {
+        throw new Error('Popup blocked. Please allow popups and try again');
+      }
+      
+      throw new Error(error.message || 'GitHub login failed');
+    }
+  }
+
+  async logout(): Promise<void> {
+    try {
+      await signOut(auth);
+      this.currentUser = null;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Logout error:', error);
       throw error;
     }
   }
 
-  logout() {
-    this.clearStorage();
+  async resetPassword(email: string): Promise<void> {
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      
+      if (error.code === 'auth/user-not-found') {
+        throw new Error('No account found with this email');
+      } else if (error.code === 'auth/invalid-email') {
+        throw new Error('Please enter a valid email address');
+      }
+      
+      throw new Error(error.message || 'Password reset failed');
+    }
+  }
+
+  async updateUserProfile(data: Partial<User>): Promise<void> {
+    if (!auth.currentUser) {
+      throw new Error('No user logged in');
+    }
+
+    try {
+      // Update Firebase Auth profile if display name or photo changed
+      if (data.displayName || data.photoURL) {
+        await updateProfile(auth.currentUser, {
+          displayName: data.displayName || auth.currentUser.displayName,
+          photoURL: data.photoURL || auth.currentUser.photoURL
+        });
+      }
+
+      // Update Firestore document
+      await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+        ...data,
+        updatedAt: new Date().toISOString()
+      });
+
+      // Update current user
+      if (this.currentUser) {
+        this.currentUser = { ...this.currentUser, ...data };
+      }
+    } catch (error) {
+      console.error('Profile update error:', error);
+      throw error;
+    }
   }
 
   getCurrentUser(): User | null {
     return this.currentUser;
   }
 
-  getAccessToken(): string | null {
-    return this.accessToken;
-  }
-
   isAuthenticated(): boolean {
-    return this.currentUser !== null && this.accessToken !== null;
+    return auth.currentUser !== null;
   }
 
-  // Helper method to get authorization headers
-  getAuthHeaders(): Record<string, string> {
+  // Get the current Firebase user
+  getFirebaseUser() {
+    return auth.currentUser;
+  }
+
+  // Listen to auth state changes
+  onAuthStateChange(callback: (user: User | null) => void) {
+    return onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const user = await this.createUserFromFirebaseUser(firebaseUser);
+        callback(user);
+      } else {
+        callback(null);
+      }
+    });
+  }
+
+  // Helper method to get authorization headers (for API calls)
+  async getAuthHeaders(): Promise<Record<string, string>> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
 
-    if (this.accessToken) {
-      headers['Authorization'] = `Bearer ${this.accessToken}`;
+    if (auth.currentUser) {
+      try {
+        const token = await auth.currentUser.getIdToken();
+        headers['Authorization'] = `Bearer ${token}`;
+      } catch (error) {
+        console.error('Error getting ID token:', error);
+      }
     }
 
     return headers;

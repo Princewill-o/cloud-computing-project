@@ -77,7 +77,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalP
         await register({
           email: formData.email,
           password: formData.password,
-          full_name: formData.fullName
+          displayName: formData.fullName
         });
       }
       onClose();

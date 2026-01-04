@@ -44,6 +44,12 @@ export function MainLayout() {
     setAuthModalOpen(true);
   };
 
+  // Get user display name
+  const getUserDisplayName = () => {
+    if (!user) return "User";
+    return user.displayName || user.name || user.email?.split('@')[0] || "User";
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-purple-50/20 to-blue-50/30 dark:from-gray-900 dark:via-purple-900/5 dark:to-blue-900/10">
       {/* Top Header */}
@@ -91,7 +97,7 @@ export function MainLayout() {
           {isAuthenticated ? (
             <div className="flex items-center gap-2">
               <div className="hidden sm:flex items-center gap-2 text-sm text-secondary">
-                <span>Welcome, {user?.name || user?.email || "User"}!</span>
+                <span>Welcome, {getUserDisplayName()}!</span>
               </div>
               <button
                 onClick={handleLogout}
@@ -127,10 +133,8 @@ export function MainLayout() {
         <Outlet />
       </main>
 
-      {/* Bottom Navigation Bar - Show for authenticated users on all screen sizes */}
-      {isAuthenticated && (
-        <BottomNavBar stickyBottom={true} />
-      )}
+      {/* Bottom Navigation Bar - Always visible */}
+      <BottomNavBar stickyBottom={true} />
 
       {/* Auth Modal */}
       <AuthModal

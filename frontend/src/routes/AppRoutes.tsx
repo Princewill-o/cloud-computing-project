@@ -15,26 +15,9 @@ import { BottomNavDemo } from "../components/demo/BottomNavDemo";
 import { ProtectedRoute } from "../shared/components/auth/ProtectedRoute";
 import { AuthTest } from "../components/test/AuthTest";
 
-// Simple test component
-function TestPage() {
-  return (
-    <div className="min-h-screen bg-white p-8">
-      <h1 className="text-3xl font-bold text-black mb-4">Test Page</h1>
-      <p className="text-gray-600">If you can see this, the routing is working!</p>
-      <div className="mt-4 space-y-2">
-        <p>Current URL: {window.location.href}</p>
-        <p>Timestamp: {new Date().toISOString()}</p>
-      </div>
-    </div>
-  );
-}
-
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Test route */}
-      <Route path="/test" element={<TestPage />} />
-      
       {/* Admin login - standalone page */}
       <Route path="/admin" element={<AdminLoginPage />} />
       
@@ -53,18 +36,10 @@ export function AppRoutes() {
         <Route path="/register" element={<RegisterPage />} />
       </Route>
 
-      {/* Main app - PROTECTED ROUTES */}
+      {/* Main app - PUBLIC ACCESS FOR NOW */}
       <Route path="/" element={<MainLayout />}>
-        <Route index element={
-          <ProtectedRoute>
-            <SimpleDashboard />
-          </ProtectedRoute>
-        } />
-        <Route path="dashboard" element={
-          <ProtectedRoute>
-            <SimpleDashboard />
-          </ProtectedRoute>
-        } />
+        <Route index element={<SimpleDashboard />} />
+        <Route path="dashboard" element={<SimpleDashboard />} />
         <Route path="injection" element={
           <ProtectedRoute>
             <InjectionPage />

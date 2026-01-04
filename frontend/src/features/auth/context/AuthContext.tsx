@@ -5,14 +5,14 @@ import {
   useEffect,
   type PropsWithChildren,
 } from "react";
-import { authService, User as BackendUser } from "../../../services/authService";
+import { authService, User, LoginRequest, RegisterRequest } from "../../../services/authService";
 
 type AuthContextValue = {
-  user: BackendUser | null;
+  user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, displayName: string) => Promise<void>;
+  login: (data: LoginRequest) => Promise<void>;
+  register: (data: RegisterRequest) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   loginWithGitHub: () => Promise<void>;
   logout: () => Promise<void>;
@@ -23,80 +23,104 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: PropsWithChildren) {
-  const [user, setUser] = useState<BackendUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is already logged in
-    const currentUser = authService.getCurrentUser();
-    if (currentUser) {
-      setUser({
-        user_id: currentUser.user_id,
-        email: currentUser.email,
-        full_name: currentUser.full_name,
-        name: currentUser.full_name, // Add alias
-      });
-    }
-    setLoading(false);
+    // Set up Firebase auth state listener
+    const unsubscribe = authService.onAuthStateChange((user) => {
+      setUser(user);
+      setLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string): Promise<void> => {
+  const login = async (data: LoginRequest): Promise<void> => {
     setLoading(true);
     try {
-      const backendUser = await authService.login({ email, password });
-      setUser({
-        ...backendUser,
-        name: backendUser.full_name, // Add alias
-      });
+      const user = await authService.login(data);
+      setUser(user);
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  const register = async (email: string, password: string, displayName: string): Promise<void> => {
+  const register = async (data: RegisterRequest): Promise<void> => {
     setLoading(true);
     try {
-      const backendUser = await authService.register({ 
-        email, 
-        password, 
-        full_name: displayName 
-      });
-      setUser({
-        ...backendUser,
-        name: backendUser.full_name, // Add alias
-      });
+      const user = await authService.register(data);
+      setUser(user);
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
   const loginWithGoogle = async (): Promise<void> => {
-    // For now, we'll use a demo account for Google login
-    // In a real app, you'd implement OAuth flow
-    await login("demo@example.com", "password123");
+    setLoading(true);
+    try {
+      const user = await authService.loginWithGoogle();
+      setUser(user);
+    } catch (error) {
+      console.error('Google login error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const loginWithGitHub = async (): Promise<void> => {
-    // For now, we'll use a demo account for GitHub login
-    // In a real app, you'd implement OAuth flow
-    await login("test@careerguide.com", "testpass123");
+    setLoading(true);
+    try {
+      const user = await authService.loginWithGitHub();
+      setUser(user);
+    } catch (error) {
+      console.error('GitHub login error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = async (): Promise<void> => {
-    authService.logout();
-    setUser(null);
+    setLoading(true);
+    try {
+      await authService.logout();
+      setUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resetPassword = async (email: string): Promise<void> => {
-    // For demo purposes, just show success
-    console.log("Password reset requested for:", email);
-    throw new Error("Password reset functionality not implemented in demo");
+    try {
+      await authService.resetPassword(email);
+    } catch (error) {
+      console.error('Password reset error:', error);
+      throw error;
+    }
   };
 
   const updateProfile = async (data: any): Promise<void> => {
-    // For demo purposes, just update local state
-    if (user) {
-      setUser({ ...user, ...data });
+    try {
+      await authService.updateUserProfile(data);
+      // Update local state
+      if (user) {
+        setUser({ ...user, ...data });
+      }
+    } catch (error) {
+      console.error('Profile update error:', error);
+      throw error;
     }
   };
 
