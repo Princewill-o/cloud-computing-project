@@ -69,21 +69,37 @@ export async function loadToBigQuery(gcsUri, { projectId, datasetId, tableId }) 
 
         console.log(`Loading data from ${gcsUri} to ${projectId}.${datasetId}.${tableId}`);
 
-        // Use table.load() method - this is the correct API for the Node.js client
-        // The source URI can be a string or array, passed as the second parameter
-        // Options go in the first parameter
+        // Create load job for GCS source
+        // table.load() expects file objects for local files, so we use createJob() for GCS URIs
         console.log('Creating BigQuery load job...');
         let job;
         try {
-            [job] = await table.load(
-                {
-                    sourceFormat: 'NEWLINE_DELIMITED_JSON',
-                    writeDisposition: 'WRITE_APPEND',
-                    ignoreUnknownValues: true,
-                    autodetect: false
+            const sourceUris = Array.isArray(gcsUri) ? gcsUri : [gcsUri];
+
+            // Create a load job configuration
+            const jobConfig = {
+                configuration: {
+                    load: {
+                        sourceUris: sourceUris,
+                        destinationTable: {
+                            projectId: projectId,
+                            datasetId: datasetId,
+                            tableId: tableId
+                        },
+                        sourceFormat: 'NEWLINE_DELIMITED_JSON',
+                        writeDisposition: 'WRITE_APPEND',
+                        ignoreUnknownValues: true,
+                        autodetect: false
+                    }
                 },
-                gcsUri
-            );
+                jobReference: {
+                    projectId: projectId,
+                    location: 'europe-north1'
+                }
+            };
+
+            // Create the job using createJob method
+            [job] = await bigquery.createJob(jobConfig);
         } catch (err) {
             // Catch permission errors during job creation
             if (err.message.includes('Permission') || err.message.includes('permission') || err.code === 403 || err.code === 401) {
